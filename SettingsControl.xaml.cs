@@ -211,6 +211,7 @@ namespace Redadeg.lmuDataPlugin
     //public class for exchanging the data with the main cs file (Init and DataUpdate function)
     public class LMURepairAndRefuelData
     {
+
         public static double mPlayerBestLapTime { get; set; }
         public static double mPlayerBestLapSector1 { get; set; }
         public static double mPlayerBestLapSector2 { get; set; }
@@ -233,7 +234,8 @@ namespace Redadeg.lmuDataPlugin
         public static int mpBrakeMigrationMax { get; set; }
         public static int mpTractionControl { get; set; }
         public static string mpMotorMap { get; set; }
-        public static string mpRegenLevel { get; set; }
+        public static int mChangedParamType { get; set; }
+        public static string mChangedParamValue { get; set; }
 
         public static float Cuts { get; set; }
         public static int CutsMax { get; set; }
@@ -280,7 +282,19 @@ namespace Redadeg.lmuDataPlugin
         public static string path { get; set; }
         public static double timeOfDay { get; set; }
         public static int rainChance { get; set; }
-        
+
+        public static string VM_ANTILOCKBRAKESYSTEMMAP { get; set; }
+        public static string VM_BRAKE_BALANCE { get; set; }
+        public static string VM_BRAKE_MIGRATION { get; set; }
+        public static string VM_ENGINE_BRAKEMAP { get; set; }
+        public static string VM_ELECTRIC_MOTOR_MAP { get; set; }
+        public static string VM_ENGINE_MIXTURE { get; set; }
+        public static string VM_REGEN_LEVEL { get; set; }
+        public static string VM_TRACTIONCONTROLMAP { get; set; }
+        public static string VM_TRACTIONCONTROLPOWERCUTMAP { get; set; }
+        public static string VM_TRACTIONCONTROLSLIPANGLEMAP { get; set; }
+        public static string VM_REAR_ANTISWAY { get; set; }
+        public static string VM_FRONT_ANTISWAY { get; set; }
     }
 
 

@@ -266,8 +266,10 @@ namespace Redadeg.lmuDataPlugin
         [MarshalAsAttribute(UnmanagedType.ByValArray, SizeConst = 16)]
         public byte[] mpMotorMap;
 
+        public int mChangedParamType;
+
         [MarshalAsAttribute(UnmanagedType.ByValArray, SizeConst = 16)]
-        public byte[] mpRegenLevel;
+        public byte[] mChangedParamValue;
 
         public int mPenaltyType;
         public int mPenaltyCount;
@@ -466,5 +468,7 @@ namespace Redadeg.lmuDataPlugin
         public int mBytesUpdatedHint;             // How many bytes of the structure were written during the last update.
                                                   // 0 means unknown (whole buffer should be considered as updated).
     }
+
+    
 
 }

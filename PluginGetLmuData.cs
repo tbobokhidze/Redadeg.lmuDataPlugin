@@ -68,11 +68,14 @@ namespace Redadeg.lmuDataPlugin
         private bool GamePaused = false;
         //private JoystickManagerSlimDX gamepadinput;
         //private string CarModel = "";
-
+        private Dictionary<string, string> frontABR;
+        private Dictionary<string, string> rearABR;
+      
         //private float[] TyreRPS = new float[] { 0f, 0f, 0f, 0f };
         int[] lapsForCalculate = new int[] { };
         //private JObject JSONdata_diameters;
         private bool isHybrid = false;
+        private bool isHaveVirtualEnergy = false;
         private bool isDamaged = false;
         private bool isStopAndGo = false;
         private bool haveDriverMenu = false;
@@ -169,12 +172,12 @@ namespace Redadeg.lmuDataPlugin
 
             if (data.GameRunning && !data.GameInMenu && !data.GamePaused && !StopUpdate)
             {
-                
-                if ( curGame == "LMU")   //TODO: check a record where the game was captured from startup on
+
+                if (curGame == "LMU")   //TODO: check a record where the game was captured from startup on
                 {
 
-                   
-                    
+
+
                     try
                     {
                         WebClient wc = new WebClient();
@@ -182,13 +185,143 @@ namespace Redadeg.lmuDataPlugin
                         JSONdata = JObject.Parse(wc.DownloadString("http://localhost:6397/rest/garage/UIScreen/RepairAndRefuel"));
                         JObject TireMagagementJSONdata = JObject.Parse(wc.DownloadString("http://localhost:6397/rest/garage/UIScreen/TireManagement"));
                         JObject GameStateJSONdata = JObject.Parse(wc.DownloadString("http://localhost:6397/rest/sessions/GetGameState"));
-                      //  JObject StandingsJSONdata = JObject.Parse(wc.DownloadString(" http://localhost:6397/rest/garage/UIScreen/Standings"));
-                   
+                        JObject SetupJSONdata = JObject.Parse(wc.DownloadString("http://localhost:6397/rest/garage/UIScreen/CarSetupOverview"));
+                        JObject carSetup = JObject.Parse(SetupJSONdata["carSetup"].ToString());
+                        JObject garageValues = JObject.Parse(carSetup["garageValues"].ToString());
+
+                        try
+                        {
+                            JObject VM_ANTILOCKBRAKESYSTEMMAP = JObject.Parse(garageValues["VM_ANTILOCKBRAKESYSTEMMAP"].ToString());
+                            JObject VM_BRAKE_BALANCE = JObject.Parse(garageValues["VM_BRAKE_BALANCE"].ToString());
+
+                            JObject VM_BRAKE_MIGRATION = JObject.Parse(garageValues["VM_BRAKE_MIGRATION"].ToString());
+                            JObject VM_ENGINE_BRAKEMAP = JObject.Parse(garageValues["VM_ENGINE_BRAKEMAP"].ToString());
+
+                            JObject VM_ELECTRIC_MOTOR_MAP = JObject.Parse(garageValues["VM_ELECTRIC_MOTOR_MAP"].ToString());
+                            JObject VM_ENGINE_MIXTURE = JObject.Parse(garageValues["VM_ENGINE_MIXTURE"].ToString());
+                            
+                            JObject VM_REGEN_LEVEL = JObject.Parse(garageValues["VM_REGEN_LEVEL"].ToString());
+
+                            JObject VM_TRACTIONCONTROLMAP = JObject.Parse(garageValues["VM_TRACTIONCONTROLMAP"].ToString());
+                            JObject VM_TRACTIONCONTROLPOWERCUTMAP = JObject.Parse(garageValues["VM_TRACTIONCONTROLPOWERCUTMAP"].ToString());
+                            JObject VM_TRACTIONCONTROLSLIPANGLEMAP = JObject.Parse(garageValues["VM_TRACTIONCONTROLSLIPANGLEMAP"].ToString());
+                            JObject VM_REAR_ANTISWAY = JObject.Parse(garageValues["VM_REAR_ANTISWAY"].ToString());
+                            JObject VM_FRONT_ANTISWAY = JObject.Parse(garageValues["VM_FRONT_ANTISWAY"].ToString());
+                            
+                                
+
+                            if (LMURepairAndRefuelData.mChangedParamType == -1)
+                            {
+                                LMURepairAndRefuelData.VM_ANTILOCKBRAKESYSTEMMAP = VM_ANTILOCKBRAKESYSTEMMAP["stringValue"].ToString();
+                                LMURepairAndRefuelData.VM_BRAKE_BALANCE = VM_BRAKE_BALANCE["stringValue"].ToString();
+                                LMURepairAndRefuelData.VM_BRAKE_MIGRATION = VM_BRAKE_MIGRATION["stringValue"].ToString();
+                                LMURepairAndRefuelData.VM_ENGINE_BRAKEMAP = VM_ENGINE_BRAKEMAP["stringValue"].ToString();
+                                LMURepairAndRefuelData.VM_ELECTRIC_MOTOR_MAP = VM_ELECTRIC_MOTOR_MAP["stringValue"].ToString();
+                                LMURepairAndRefuelData.VM_REGEN_LEVEL = VM_REGEN_LEVEL["stringValue"].ToString();
+                                LMURepairAndRefuelData.VM_TRACTIONCONTROLMAP = VM_TRACTIONCONTROLMAP["stringValue"].ToString();
+                                LMURepairAndRefuelData.VM_TRACTIONCONTROLPOWERCUTMAP = VM_TRACTIONCONTROLPOWERCUTMAP["stringValue"].ToString();
+                                LMURepairAndRefuelData.VM_TRACTIONCONTROLSLIPANGLEMAP = VM_TRACTIONCONTROLSLIPANGLEMAP["stringValue"].ToString();
+                                LMURepairAndRefuelData.VM_REAR_ANTISWAY = VM_REAR_ANTISWAY["stringValue"].ToString();
+                                LMURepairAndRefuelData.VM_FRONT_ANTISWAY = VM_FRONT_ANTISWAY["stringValue"].ToString();
+                            }
+                            else
+                            {
+                                switch  (LMURepairAndRefuelData.mChangedParamType)
+                                    {
+                                    case 0:
+                                        LMURepairAndRefuelData.VM_ANTILOCKBRAKESYSTEMMAP = LMURepairAndRefuelData.mChangedParamValue;
+                                        break;
+                                    case 10:
+                                        LMURepairAndRefuelData.VM_BRAKE_BALANCE = LMURepairAndRefuelData.mChangedParamValue;
+                                        break;
+                                    case 15:
+                                        LMURepairAndRefuelData.VM_BRAKE_MIGRATION = LMURepairAndRefuelData.mChangedParamValue;
+                                        break;
+                                    case 9:
+                                        if (LMURepairAndRefuelData.mChangedParamValue.Contains("kW") || LMURepairAndRefuelData.mChangedParamValue.Contains("Off")|| LMURepairAndRefuelData.mChangedParamValue.Contains("Safety-car") || LMURepairAndRefuelData.mChangedParamValue.Contains("Race"))
+                                        {
+                                            if (data.OldData.CarClass.Contains("Hyper"))
+                                            {
+                                                LMURepairAndRefuelData.VM_ELECTRIC_MOTOR_MAP = LMURepairAndRefuelData.mChangedParamValue;
+                                            }
+                                            else
+                                            {
+                                                LMURepairAndRefuelData.VM_ENGINE_MIXTURE = LMURepairAndRefuelData.mChangedParamValue;
+                                            }
+                                            
+                                        }
+                                        else
+                                        {
+                                            //string front_abr = LMURepairAndRefuelData.mChangedParamValue.Replace(" N/mm", "");
+
+                                            if (data.OldData.CarModel.Equals("Ferrari AF Corse 2024") || data.OldData.CarModel.Equals("Ferrari AF Corse"))
+                                            { LMURepairAndRefuelData.VM_FRONT_ANTISWAY = frontABR["F" + LMURepairAndRefuelData.mChangedParamValue]; }
+                                            else if (data.OldData.CarModel.Equals("Peugeot TotalEnergies 2024") || data.OldData.CarModel.Equals("Porsche Penske Motorsport 2024") || data.OldData.CarModel.Equals("Toyota Gazoo Racing 2024") || data.OldData.CarModel.Equals("Peugeot TotalEnergies") || data.OldData.CarModel.Equals("Porsche Penske Motorsport") || data.OldData.CarModel.Equals("Toyota Gazoo Racing"))
+                                            { LMURepairAndRefuelData.VM_FRONT_ANTISWAY = frontABR["P" + LMURepairAndRefuelData.mChangedParamValue]; }
+                                            else
+                                            { LMURepairAndRefuelData.VM_FRONT_ANTISWAY = frontABR[LMURepairAndRefuelData.mChangedParamValue]; }
+                                            
+                                            //switch (front_abr)
+                                            //{
+                                            //    case "866":
+                                            //        LMURepairAndRefuelData.VM_FRONT_ANTISWAY = "P1";
+                                            //        break;
+                                            //    case "1069":
+                                            //        LMURepairAndRefuelData.VM_FRONT_ANTISWAY = "P2";
+                                            //        break;
+                                            //    case "1271":
+                                            //        LMURepairAndRefuelData.VM_FRONT_ANTISWAY = "P3";
+                                            //        break;
+                                            //    case "1473":
+                                            //        LMURepairAndRefuelData.VM_FRONT_ANTISWAY = "P4";
+                                            //        break;
+                                            //    case "1676":
+                                            //        LMURepairAndRefuelData.VM_FRONT_ANTISWAY = "P5";
+                                            //        break;
+                                            //    default:
+                                            //        LMURepairAndRefuelData.VM_FRONT_ANTISWAY = front_abr;
+                                            //        break;
+                                            //}
+                                           
+                                        }
+                                        break;
+                                    case 11:
+                                        LMURepairAndRefuelData.VM_REGEN_LEVEL = LMURepairAndRefuelData.mChangedParamValue;
+                                        break;
+                                    case 13:
+                                        LMURepairAndRefuelData.VM_TRACTIONCONTROLSLIPANGLEMAP = LMURepairAndRefuelData.mChangedParamValue;
+                                        break;
+                                    case 12:
+                                        LMURepairAndRefuelData.VM_TRACTIONCONTROLPOWERCUTMAP = LMURepairAndRefuelData.mChangedParamValue;
+                                        break;
+                                    case 16:
+                                        LMURepairAndRefuelData.VM_TRACTIONCONTROLMAP = LMURepairAndRefuelData.mChangedParamValue;
+                                        break;
+                                    case 8:
+                                         if (data.OldData.CarModel.Equals("Ferrari AF Corse 2024") || data.OldData.CarModel.Equals("Ferrari AF Corse"))
+                                        { LMURepairAndRefuelData.VM_REAR_ANTISWAY = rearABR["F" + LMURepairAndRefuelData.mChangedParamValue]; }
+                                        else if (data.OldData.CarModel.Equals("Peugeot TotalEnergies 2024") || data.OldData.CarModel.Equals("Porsche Penske Motorsport 2024") || data.OldData.CarModel.Equals("Toyota Gazoo Racing 2024") || data.OldData.CarModel.Equals("Peugeot TotalEnergies") || data.OldData.CarModel.Equals("Porsche Penske Motorsport") || data.OldData.CarModel.Equals("Toyota Gazoo Racing"))
+                                        { LMURepairAndRefuelData.VM_REAR_ANTISWAY = rearABR["P" + LMURepairAndRefuelData.mChangedParamValue]; }
+                                        else
+                                        { LMURepairAndRefuelData.VM_REAR_ANTISWAY = rearABR[LMURepairAndRefuelData.mChangedParamValue]; }
+
+                                        break;
+                                    default:
+                                        // code block
+                                       break;
 
 
+                                }
+                            }
+                        }
+                        catch 
+                        {
+
+                        }
+                       
 
 
-                        JObject fuelInfo = JObject.Parse(JSONdata["fuelInfo"].ToString());
+                            JObject fuelInfo = JObject.Parse(JSONdata["fuelInfo"].ToString());
                         JObject pitStopLength = JObject.Parse(JSONdata["pitStopLength"].ToString());
 
                         if (pitStopUpdatePause == -1)
@@ -208,14 +341,14 @@ namespace Redadeg.lmuDataPlugin
 
 
                         JObject tireInventory = JObject.Parse(TireMagagementJSONdata["tireInventory"].ToString());
-                       // JObject Standings = JObject.Parse(StandingsJSONdata["standings"].ToString());
+                        // JObject Standings = JObject.Parse(StandingsJSONdata["standings"].ToString());
 
-                        LMURepairAndRefuelData.maxAvailableTires = tireInventory["maxAvailableTires"] != null ?(int)tireInventory["maxAvailableTires"]:0;
-                        LMURepairAndRefuelData.newTires = tireInventory["newTires"] != null ? (int)tireInventory["newTires"]: 0;
+                        LMURepairAndRefuelData.maxAvailableTires = tireInventory["maxAvailableTires"] != null ? (int)tireInventory["maxAvailableTires"] : 0;
+                        LMURepairAndRefuelData.newTires = tireInventory["newTires"] != null ? (int)tireInventory["newTires"] : 0;
 
-                        LMURepairAndRefuelData.currentBattery = fuelInfo["currentBattery"] != null ? (int)fuelInfo["currentBattery"]: 0;
+                        LMURepairAndRefuelData.currentBattery = fuelInfo["currentBattery"] != null ? (int)fuelInfo["currentBattery"] : 0;
                         LMURepairAndRefuelData.currentFuel = fuelInfo["currentFuel"] != null ? (int)fuelInfo["currentFuel"] : 0;
-                        LMURepairAndRefuelData.timeOfDay = GameStateJSONdata["timeOfDay"] != null ? (double)GameStateJSONdata["timeOfDay"]: 0;
+                        LMURepairAndRefuelData.timeOfDay = GameStateJSONdata["timeOfDay"] != null ? (double)GameStateJSONdata["timeOfDay"] : 0;
                         try
                         {
                             JObject InfoForEventJSONdata = JObject.Parse(wc.DownloadString("http://localhost:6397/rest/sessions/GetSessionsInfoForEvent"));
@@ -228,7 +361,7 @@ namespace Redadeg.lmuDataPlugin
                             }
                         }
                         catch
-                        { 
+                        {
                         }
 
 
@@ -242,10 +375,10 @@ namespace Redadeg.lmuDataPlugin
                             LMURepairAndRefuelData.currentVirtualEnergy = 0;
                             LMURepairAndRefuelData.maxVirtualEnergy = 0;
                         }
-                       
+
                         LMURepairAndRefuelData.maxBattery = (int)fuelInfo["maxBattery"];
                         LMURepairAndRefuelData.maxFuel = (int)fuelInfo["maxFuel"];
-                       
+
                         LMURepairAndRefuelData.pitStopLength = (int)pitStopLength["timeInSeconds"];
                         haveDriverMenu = false;
                         isStopAndGo = false;
@@ -287,7 +420,7 @@ namespace Redadeg.lmuDataPlugin
                             }
                             int Virtual_Energy = 0;
                             try
-                           
+
                             {
 
 
@@ -296,7 +429,7 @@ namespace Redadeg.lmuDataPlugin
                                     LMURepairAndRefuelData.addVirtualEnergy = PMCs["settings"][(int)PMCs["currentSetting"]]["text"].ToString();
                                     Virtual_Energy = (int)PMCs["currentSetting"];
                                     pluginManager.SetPropertyValue("georace.lmu.Virtual_Energy", this.GetType(), Virtual_Energy);
-                                         }
+                                }
                                 if ((int)PMCs["PMC Value"] == 6)
                                 {
                                     if (PMCs["name"].ToString().Equals("FUEL:"))
@@ -347,7 +480,7 @@ namespace Redadeg.lmuDataPlugin
                             if ((int)PMCs["PMC Value"] == 14)
                             {
                                 LMURepairAndRefuelData.rl_TyreChange = PMCs["settings"][(int)PMCs["currentSetting"]]["text"].ToString();
-          
+
                             }
                             if ((int)PMCs["PMC Value"] == 15)
                             {
@@ -358,7 +491,7 @@ namespace Redadeg.lmuDataPlugin
                             if ((int)PMCs["PMC Value"] == 35)
                             {
                                 LMURepairAndRefuelData.fl_TyrePressure = PMCs["settings"][(int)PMCs["currentSetting"]]["text"].ToString();
-      
+
                             }
                             if ((int)PMCs["PMC Value"] == 36)
                             {
@@ -368,7 +501,7 @@ namespace Redadeg.lmuDataPlugin
                             if ((int)PMCs["PMC Value"] == 37)
                             {
                                 LMURepairAndRefuelData.rl_TyrePressure = PMCs["settings"][(int)PMCs["currentSetting"]]["text"].ToString();
-      
+
                             }
                             if ((int)PMCs["PMC Value"] == 38)
                             {
@@ -393,7 +526,7 @@ namespace Redadeg.lmuDataPlugin
                         {
                             pluginManager.AddProperty("Redadeg.lmu.isStopAndGo", this.GetType(), 0);
                         }
-                       
+
                         if (isHybrid)
                         {
                             pluginManager.SetPropertyValue("Redadeg.lmu.isHyper", this.GetType(), 1);
@@ -419,7 +552,7 @@ namespace Redadeg.lmuDataPlugin
                         {
                             pluginManager.SetPropertyValue("Redadeg.lmu.haveDriverMenu", this.GetType(), 0);
                         }
-                        
+
 
                         //data.NewData.SessionOdo < 50 || 
                         if (data.OldData.SessionTypeName != data.NewData.SessionTypeName || data.OldData.IsSessionRestart != data.NewData.IsSessionRestart || !data.SessionId.Equals(SessionId))
@@ -454,7 +587,7 @@ namespace Redadeg.lmuDataPlugin
 
                             scoringBuffer.ClearStats();
                         }
-                     
+
 
                         if (isHybrid)
                         {
@@ -466,7 +599,8 @@ namespace Redadeg.lmuDataPlugin
                             string mPitStatus = "0";
                             try
                             {
-                                mPitStatus = pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.CurrentPlayer.mPitState").ToString(); }
+                                mPitStatus = pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.CurrentPlayer.mPitState").ToString();
+                            }
                             catch { }
 
                             pluginManager.SetPropertyValue("Redadeg.lmu.CurrentLapTimeDifOldNew", this.GetType(), mPitStatus + " SetPit Int " + data.NewData.IsInPitSince);
@@ -482,10 +616,10 @@ namespace Redadeg.lmuDataPlugin
                             }
 
                             if (data.OldData.IsInPit > 0) IsInPit = data.OldData.CurrentLap;
-                           
-                          
 
-                         
+
+
+
                             if (data.OldData.IsInPit > data.NewData.IsInPit)
                             {
                                 OutFromPitFlag = true;
@@ -536,7 +670,8 @@ namespace Redadeg.lmuDataPlugin
                                     InToPitFlag = false;
                                     outFromPitTime = TimeSpan.FromSeconds(0);
                                     InToPitTime = TimeSpan.FromSeconds(0);
-                                } else if (OutFromPitFlag)
+                                }
+                                else if (OutFromPitFlag)
                                 {
                                     ComputeEnergyData(data.OldData.CurrentLap, data.OldData.CurrentLapTime.TotalSeconds - outFromPitTime.TotalSeconds, IsInPit, data.OldData.IsLapValid, pluginManager);
                                     // pluginManager.SetPropertyValue("Redadeg.lmu.CurrentLapTimeDifOldNew", this.GetType(), data.OldData.IsInPit.ToString() + " OutFromPitFlag_1 " + data.NewData.IsInPit.ToString());
@@ -545,12 +680,12 @@ namespace Redadeg.lmuDataPlugin
                                     outFromPitTime = TimeSpan.FromSeconds(0);
                                     InToPitTime = TimeSpan.FromSeconds(0);
                                 }
-                              
+
                                 energy_LastLapEnergy = LMURepairAndRefuelData.currentVirtualEnergy;
                                 //ComputeEnergyData(data.OldData.CurrentLap, data.OldData.CurrentLapTime.TotalSeconds, IsInPit, LapOldNew, data.OldData.IsLapValid, pluginManager);
 
                             }
-                           
+
 
                             LastLapId = data.LapId;
 
@@ -559,12 +694,12 @@ namespace Redadeg.lmuDataPlugin
 
                             if (OutFromPitFlag)
                             {
-                                
+
                             }
 
                             if (EnergyConsuptions.Count() > 0 && LapTimes.Count() > 0)
                             {
-                                LMURepairAndRefuelData.energyTimeElapsed = LapTimes.Average() * LMURepairAndRefuelData.currentVirtualEnergy / EnergyConsuptions.Average(); 
+                                LMURepairAndRefuelData.energyTimeElapsed = LapTimes.Average() * LMURepairAndRefuelData.currentVirtualEnergy / EnergyConsuptions.Average();
                             }
                             else
                             {
@@ -574,7 +709,7 @@ namespace Redadeg.lmuDataPlugin
                                 pluginManager.SetPropertyValue("Redadeg.lmu.energyLapsRealTimeElapsed", this.GetType(), energyLapsRealTimeElapsed);
                             }
                             pluginManager.SetPropertyValue("Redadeg.lmu.energyTimeElapsed", this.GetType(), LMURepairAndRefuelData.energyTimeElapsed);
-                          
+
 
 
                         }
@@ -668,17 +803,17 @@ namespace Redadeg.lmuDataPlugin
                             if (data.NewData.Sector1Time.HasValue) LMURepairAndRefuelData.mPlayerCurSector1 = data.NewData.Sector1Time.Value.TotalSeconds;
                             //Logging.Current.Info("Print sector 1: " + data.OldData.Sector1Time.Value.TotalSeconds.ToString() + " - " + data.NewData.Sector1Time.Value.TotalSeconds.ToString());
 
-                        if (data.NewData.Sector2Time.HasValue) LMURepairAndRefuelData.mPlayerCurSector2 = data.NewData.Sector2Time.Value.TotalSeconds;
-                        if (data.NewData.Sector3LastLapTime.HasValue) LMURepairAndRefuelData.mPlayerCurSector3 = data.NewData.Sector3LastLapTime.Value.TotalSeconds;
+                            if (data.NewData.Sector2Time.HasValue) LMURepairAndRefuelData.mPlayerCurSector2 = data.NewData.Sector2Time.Value.TotalSeconds;
+                            if (data.NewData.Sector3LastLapTime.HasValue) LMURepairAndRefuelData.mPlayerCurSector3 = data.NewData.Sector3LastLapTime.Value.TotalSeconds;
 
-                        if ((LMURepairAndRefuelData.mPlayerBestSector1 > LMURepairAndRefuelData.mPlayerCurSector1 || LMURepairAndRefuelData.mPlayerBestSector1 == 0) && LMURepairAndRefuelData.mPlayerCurSector1 > 0.0) LMURepairAndRefuelData.mPlayerBestSector1 = LMURepairAndRefuelData.mPlayerCurSector1;
-                        if ((LMURepairAndRefuelData.mPlayerBestSector2 > LMURepairAndRefuelData.mPlayerCurSector2 || LMURepairAndRefuelData.mPlayerBestSector2 == 0) && LMURepairAndRefuelData.mPlayerCurSector2 > 0.0) LMURepairAndRefuelData.mPlayerBestSector2 = LMURepairAndRefuelData.mPlayerCurSector2;
-                        if ((LMURepairAndRefuelData.mPlayerBestSector3 > LMURepairAndRefuelData.mPlayerCurSector3 || LMURepairAndRefuelData.mPlayerBestSector3 == 0) && LMURepairAndRefuelData.mPlayerCurSector3 > 0.0) LMURepairAndRefuelData.mPlayerBestSector3 = LMURepairAndRefuelData.mPlayerCurSector3;
+                            if ((LMURepairAndRefuelData.mPlayerBestSector1 > LMURepairAndRefuelData.mPlayerCurSector1 || LMURepairAndRefuelData.mPlayerBestSector1 == 0) && LMURepairAndRefuelData.mPlayerCurSector1 > 0.0) LMURepairAndRefuelData.mPlayerBestSector1 = LMURepairAndRefuelData.mPlayerCurSector1;
+                            if ((LMURepairAndRefuelData.mPlayerBestSector2 > LMURepairAndRefuelData.mPlayerCurSector2 || LMURepairAndRefuelData.mPlayerBestSector2 == 0) && LMURepairAndRefuelData.mPlayerCurSector2 > 0.0) LMURepairAndRefuelData.mPlayerBestSector2 = LMURepairAndRefuelData.mPlayerCurSector2;
+                            if ((LMURepairAndRefuelData.mPlayerBestSector3 > LMURepairAndRefuelData.mPlayerCurSector3 || LMURepairAndRefuelData.mPlayerBestSector3 == 0) && LMURepairAndRefuelData.mPlayerCurSector3 > 0.0) LMURepairAndRefuelData.mPlayerBestSector3 = LMURepairAndRefuelData.mPlayerCurSector3;
 
-                        LMURepairAndRefuelData.mPlayerBestLapTime = data.NewData.BestLapTime.TotalSeconds > 0 ? data.NewData.BestLapTime.TotalSeconds : 0;
-                        LMURepairAndRefuelData.mPlayerBestLapSector1 = data.NewData.Sector1BestLapTime.Value.TotalSeconds > 0 ? data.NewData.Sector1BestLapTime.Value.TotalSeconds : 0;
-                        LMURepairAndRefuelData.mPlayerBestLapSector2 = data.NewData.Sector2BestLapTime.Value.TotalSeconds > 0 ? data.NewData.Sector2BestLapTime.Value.TotalSeconds : 0;
-                        LMURepairAndRefuelData.mPlayerBestLapSector3 = data.NewData.Sector3BestLapTime.Value.TotalSeconds > 0 ? data.NewData.Sector3BestLapTime.Value.TotalSeconds : 0;
+                            LMURepairAndRefuelData.mPlayerBestLapTime = data.NewData.BestLapTime.TotalSeconds > 0 ? data.NewData.BestLapTime.TotalSeconds : 0;
+                            LMURepairAndRefuelData.mPlayerBestLapSector1 = data.NewData.Sector1BestLapTime.Value.TotalSeconds > 0 ? data.NewData.Sector1BestLapTime.Value.TotalSeconds : 0;
+                            LMURepairAndRefuelData.mPlayerBestLapSector2 = data.NewData.Sector2BestLapTime.Value.TotalSeconds > 0 ? data.NewData.Sector2BestLapTime.Value.TotalSeconds : 0;
+                            LMURepairAndRefuelData.mPlayerBestLapSector3 = data.NewData.Sector3BestLapTime.Value.TotalSeconds > 0 ? data.NewData.Sector3BestLapTime.Value.TotalSeconds : 0;
                         }
                         //Calc current times end
 
@@ -722,7 +857,7 @@ namespace Redadeg.lmuDataPlugin
                         pluginManager.SetPropertyValue("Redadeg.lmu.Extended.PenaltyLeftLaps", this.GetType(), LMURepairAndRefuelData.PenaltyLeftLaps);
                         pluginManager.SetPropertyValue("Redadeg.lmu.Extended.PenaltyType", this.GetType(), LMURepairAndRefuelData.PenaltyType);
                         pluginManager.SetPropertyValue("Redadeg.lmu.Extended.PenaltyCount", this.GetType(), LMURepairAndRefuelData.PenaltyCount);
-                        
+
                         pluginManager.SetPropertyValue("Redadeg.lmu.Extended.PendingPenaltyType1", this.GetType(), LMURepairAndRefuelData.mPendingPenaltyType1);
                         pluginManager.SetPropertyValue("Redadeg.lmu.Extended.PendingPenaltyType2", this.GetType(), LMURepairAndRefuelData.mPendingPenaltyType2);
                         pluginManager.SetPropertyValue("Redadeg.lmu.Extended.PendingPenaltyType3", this.GetType(), LMURepairAndRefuelData.mPendingPenaltyType3);
@@ -751,13 +886,28 @@ namespace Redadeg.lmuDataPlugin
                         pluginManager.SetPropertyValue("Redadeg.lmu.Clock_Format24", this.GetType(), ButtonBindSettings.Clock_Format24);
                         pluginManager.SetPropertyValue("Redadeg.lmu.RealTimeClock", this.GetType(), ButtonBindSettings.RealTimeClock);
 
-                        pluginManager.SetPropertyValue("Redadeg.lmu.Extended.MotorMap", this.GetType(),LMURepairAndRefuelData.mpMotorMap);
-                        pluginManager.SetPropertyValue("Redadeg.lmu.Extended.RegenLevel", this.GetType(), LMURepairAndRefuelData.mpRegenLevel);
+                        pluginManager.SetPropertyValue("Redadeg.lmu.Extended.MotorMap", this.GetType(), LMURepairAndRefuelData.mpMotorMap);
+                        pluginManager.SetPropertyValue("Redadeg.lmu.Extended.ChangedParamValue", this.GetType(), LMURepairAndRefuelData.mChangedParamValue);
+                        pluginManager.SetPropertyValue("Redadeg.lmu.Extended.ChangedParamType", this.GetType(), LMURepairAndRefuelData.mChangedParamType);
+
+                        pluginManager.SetPropertyValue("Redadeg.lmu.Extended.VM_ANTILOCKBRAKESYSTEMMAP", this.GetType(), LMURepairAndRefuelData.VM_ANTILOCKBRAKESYSTEMMAP);
+                        pluginManager.SetPropertyValue("Redadeg.lmu.Extended.VM_BRAKE_BALANCE", this.GetType(), LMURepairAndRefuelData.VM_BRAKE_BALANCE);
+                        pluginManager.SetPropertyValue("Redadeg.lmu.Extended.VM_BRAKE_MIGRATION", this.GetType(), LMURepairAndRefuelData.VM_BRAKE_MIGRATION);
+                        pluginManager.SetPropertyValue("Redadeg.lmu.Extended.VM_ENGINE_BRAKEMAP", this.GetType(), LMURepairAndRefuelData.VM_ENGINE_BRAKEMAP);
+                        pluginManager.SetPropertyValue("Redadeg.lmu.Extended.VM_ELECTRIC_MOTOR_MAP", this.GetType(), LMURepairAndRefuelData.VM_ELECTRIC_MOTOR_MAP);
+                        pluginManager.SetPropertyValue("Redadeg.lmu.Extended.VM_ENGINE_MIXTURE", this.GetType(), LMURepairAndRefuelData.VM_ENGINE_MIXTURE);
+                        pluginManager.SetPropertyValue("Redadeg.lmu.Extended.VM_REGEN_LEVEL", this.GetType(), LMURepairAndRefuelData.VM_REGEN_LEVEL);
+                        pluginManager.SetPropertyValue("Redadeg.lmu.Extended.VM_TRACTIONCONTROLMAP", this.GetType(), LMURepairAndRefuelData.VM_TRACTIONCONTROLMAP);
+                        pluginManager.SetPropertyValue("Redadeg.lmu.Extended.VM_TRACTIONCONTROLPOWERCUTMAP", this.GetType(), LMURepairAndRefuelData.VM_TRACTIONCONTROLPOWERCUTMAP);
+                        pluginManager.SetPropertyValue("Redadeg.lmu.Extended.VM_TRACTIONCONTROLSLIPANGLEMAP", this.GetType(), LMURepairAndRefuelData.VM_TRACTIONCONTROLSLIPANGLEMAP);
+                        pluginManager.SetPropertyValue("Redadeg.lmu.Extended.VM_FRONT_ANTISWAY", this.GetType(), LMURepairAndRefuelData.VM_FRONT_ANTISWAY);
+                        pluginManager.SetPropertyValue("Redadeg.lmu.Extended.VM_REAR_ANTISWAY", this.GetType(), LMURepairAndRefuelData.VM_REAR_ANTISWAY);
+
                         //DataCorePlugin.GameRawData.CurrentPlayerTelemetry.mRearBrakeBias
                         double mRearBrakeBias = 0.0;
                         try
-                        { 
-                            mRearBrakeBias = (double)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.CurrentPlayerTelemetry.mRearBrakeBias"); 
+                        {
+                            mRearBrakeBias = (double)pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.CurrentPlayerTelemetry.mRearBrakeBias");
                         }
                         catch
                         { }
@@ -781,10 +931,15 @@ namespace Redadeg.lmuDataPlugin
                         LMURepairAndRefuelData.maxVirtualEnergy = 920000000;
                         LMURepairAndRefuelData.pitStopLength = 0;
                         Logging.Current.Info("Plugin Redadeg.lmuDataPlugin: " + ex.ToString());
-                        
+
                     }
-                 }
+                }
                 StopUpdate = false;
+            }
+            else
+            {
+                LMURepairAndRefuelData.mChangedParamType = -1;
+                LMURepairAndRefuelData.mChangedParamValue = "";
             }
             
         }
@@ -889,7 +1044,19 @@ namespace Redadeg.lmuDataPlugin
                             LMURepairAndRefuelData.mpBrakeMigrationMax = 0;
                             LMURepairAndRefuelData.mpTractionControl = 0;
                             LMURepairAndRefuelData.mpMotorMap = "None";
-                            LMURepairAndRefuelData.mpRegenLevel = "None";
+                            LMURepairAndRefuelData.mChangedParamValue = "None";
+                            LMURepairAndRefuelData.mChangedParamType = 0;
+                            LMURepairAndRefuelData.VM_ANTILOCKBRAKESYSTEMMAP = "N/A";
+                            LMURepairAndRefuelData.VM_BRAKE_BALANCE = "N/A";
+                            LMURepairAndRefuelData.VM_BRAKE_MIGRATION = "N/A";
+                            LMURepairAndRefuelData.VM_ENGINE_BRAKEMAP = "N/A";
+                            LMURepairAndRefuelData.VM_ELECTRIC_MOTOR_MAP = "N/A";
+                            LMURepairAndRefuelData.VM_REGEN_LEVEL = "N/A";
+                            LMURepairAndRefuelData.VM_TRACTIONCONTROLMAP = "N/A";
+                            LMURepairAndRefuelData.VM_TRACTIONCONTROLPOWERCUTMAP = "N/A";
+                            LMURepairAndRefuelData.VM_TRACTIONCONTROLSLIPANGLEMAP = "N/A";
+                            LMURepairAndRefuelData.VM_FRONT_ANTISWAY = "N/A";
+                            LMURepairAndRefuelData.VM_REAR_ANTISWAY = "N/A";
                             this.lmu_extended_connected = false;
                            // Logging.Current.Info("Extended data update service not connectded.");
                         }
@@ -910,8 +1077,17 @@ namespace Redadeg.lmuDataPlugin
                         LMURepairAndRefuelData.mpBrakeMigrationMax = lmu_extended.mpBrakeMigrationMax;
                         LMURepairAndRefuelData.mpTractionControl = lmu_extended.mpTractionControl;
                         LMURepairAndRefuelData.mpMotorMap = GetStringFromBytes(lmu_extended.mpMotorMap);
-                        LMURepairAndRefuelData.mpRegenLevel = GetStringFromBytes(lmu_extended.mpRegenLevel);
-
+                        string mChangedParamValue = GetStringFromBytes(lmu_extended.mChangedParamValue).Trim();
+                        if (lmu_extended.mChangedParamType == 0 && mChangedParamValue.Equals(""))
+                        {
+                            LMURepairAndRefuelData.mChangedParamType = -1;
+                            LMURepairAndRefuelData.mChangedParamValue = "";
+                        }
+                        else 
+                        {
+                            LMURepairAndRefuelData.mChangedParamType = lmu_extended.mChangedParamType;
+                            LMURepairAndRefuelData.mChangedParamValue = mChangedParamValue;
+                        }
 
 
                        // Logging.Current.Info(("Extended data update service connectded. " +  lmu_extended.mCutsPoints.ToString() + " Penalty laps" + lmu_extended.mPenaltyLeftLaps).ToString());
@@ -1124,7 +1300,8 @@ namespace Redadeg.lmuDataPlugin
             pluginManager.AddProperty("Redadeg.lmu.Extended.PendingPenaltyType3", this.GetType(), 0);
             pluginManager.AddProperty("Redadeg.lmu.Extended.TractionControl", this.GetType(),0);
             pluginManager.AddProperty("Redadeg.lmu.Extended.MotorMap", this.GetType(), "None");
-            pluginManager.AddProperty("Redadeg.lmu.Extended.RegenLevel", this.GetType(), "None");
+            pluginManager.AddProperty("Redadeg.lmu.Extended.ChangedParamType", this.GetType(), -1);
+            pluginManager.AddProperty("Redadeg.lmu.Extended.ChangedParamValue", this.GetType(), "None");
             pluginManager.AddProperty("Redadeg.lmu.Extended.BrakeMigration", this.GetType(),0);
             pluginManager.AddProperty("Redadeg.lmu.Extended.BrakeMigrationMax", this.GetType(), 0);
 
@@ -1149,8 +1326,148 @@ namespace Redadeg.lmuDataPlugin
 
             pluginManager.AddProperty("Redadeg.lmu.mMessage", this.GetType(), "");
 
+            pluginManager.AddProperty("Redadeg.lmu.Extended.VM_ANTILOCKBRAKESYSTEMMAP", this.GetType(),"");
+            pluginManager.AddProperty("Redadeg.lmu.Extended.VM_BRAKE_BALANCE", this.GetType(), "");
+            pluginManager.AddProperty("Redadeg.lmu.Extended.VM_BRAKE_MIGRATION", this.GetType(), "");
+            pluginManager.AddProperty("Redadeg.lmu.Extended.VM_ENGINE_BRAKEMAP", this.GetType(), "");
+            pluginManager.AddProperty("Redadeg.lmu.Extended.VM_ELECTRIC_MOTOR_MAP", this.GetType(), "");
+            pluginManager.AddProperty("Redadeg.lmu.Extended.VM_ENGINE_MIXTURE", this.GetType(), ""); 
+            pluginManager.AddProperty("Redadeg.lmu.Extended.VM_REGEN_LEVEL", this.GetType(), "");
+            pluginManager.AddProperty("Redadeg.lmu.Extended.VM_TRACTIONCONTROLMAP", this.GetType(), "");
+            pluginManager.AddProperty("Redadeg.lmu.Extended.VM_TRACTIONCONTROLPOWERCUTMAP", this.GetType(), "");
+            pluginManager.AddProperty("Redadeg.lmu.Extended.VM_TRACTIONCONTROLSLIPANGLEMAP", this.GetType(), "");
+            pluginManager.AddProperty("Redadeg.lmu.Extended.VM_FRONT_ANTISWAY", this.GetType(), "");
+            pluginManager.AddProperty("Redadeg.lmu.Extended.VM_REAR_ANTISWAY", this.GetType(), "");
 
-           
+
+
+            frontABR = new Dictionary<string, string>();
+            rearABR = new Dictionary<string, string>();
+            try
+            {
+                //Add front ABR
+                frontABR.Add("Detached", "Detached");
+                frontABR.Add("866 N/mm", "P1");
+                frontABR.Add("1069 N/mm", "P2");
+                frontABR.Add("1271 N/mm", "P3");
+                frontABR.Add("1473 N/mm", "P4");
+                frontABR.Add("1676 N/mm", "P5");
+
+                //ferrary
+                frontABR.Add("FDetached", "Detached");
+                frontABR.Add("F94 N/mm", "A-P1");
+                frontABR.Add("F107 N/mm", "A-P2");
+                frontABR.Add("F133 N/mm", "A-P3");
+                frontABR.Add("F172 N/mm", "A-P4");
+                frontABR.Add("F254 N/mm", "A-P5");
+
+                frontABR.Add("F232 N/mm", "B-P1");
+                frontABR.Add("F262 N/mm", "B-P2");
+                frontABR.Add("F307 N/mm", "B-P3");
+                frontABR.Add("F364 N/mm", "B-P4");
+                frontABR.Add("F440 N/mm", "B-P5");
+
+                frontABR.Add("F312 N/mm", "C-P1");
+                frontABR.Add("F332 N/mm", "C-P2");
+                frontABR.Add("F365 N/mm", "C-P3");
+                frontABR.Add("F403 N/mm", "C-P4");
+                frontABR.Add("F450 N/mm", "C-P5");
+
+                frontABR.Add("F426 N/mm", "D-P1");
+                frontABR.Add("F469 N/mm", "D-P2");
+                frontABR.Add("F530 N/mm", "D-P3");
+                frontABR.Add("F599 N/mm", "D-P4");
+                frontABR.Add("F685 N/mm", "D-P5");
+
+                frontABR.Add("F632 N/mm", "E-P1");
+                frontABR.Add("F748 N/mm", "E-P2");
+                frontABR.Add("F929 N/mm", "E-P3");
+                frontABR.Add("F1152 N/mm", "E-P4");
+                frontABR.Add("F1473 N/mm", "E-P5");
+
+
+                //pegeout
+                frontABR.Add("PDetached", "Detached");
+                frontABR.Add("P428 N/mm", "P1");
+                frontABR.Add("P487 N/mm", "P2");
+                frontABR.Add("P559 N/mm", "P3");
+                frontABR.Add("P819 N/mm", "P4");
+                frontABR.Add("P932 N/mm", "P5");
+
+                frontABR.Add("P1069 N/mm", "P6");
+                frontABR.Add("P1545 N/mm", "P7");
+                frontABR.Add("P1758 N/mm", "P8");
+                frontABR.Add("P2018 N/mm", "P9");
+                frontABR.Add("P2689 N/mm", "P10");
+
+                frontABR.Add("P3059 N/mm", "P11");
+                frontABR.Add("P3512 N/mm", "P12");
+                frontABR.Add("P3889 N/mm", "P13");
+                frontABR.Add("P4425 N/mm", "P14");
+                frontABR.Add("P5080 N/mm", "P15");
+
+
+                //add rear abr
+                rearABR.Add("Detached", "Detached");
+                rearABR.Add("492 N/mm", "P1");
+                rearABR.Add("638 N/mm", "P2");
+                rearABR.Add("784 N/mm", "P3");
+                rearABR.Add("930 N/mm", "P4");
+                rearABR.Add("1077 N/mm", "P5");
+                //ferrary
+                rearABR.Add("FDetached", "Detached");
+                rearABR.Add("F98 N/mm", "A-P1");
+                rearABR.Add("F120 N/mm", "A-P2");
+                rearABR.Add("F142 N/mm", "A-P3");
+                rearABR.Add("F166 N/mm", "A-P4");
+                rearABR.Add("F184 N/mm", "A-P5");
+
+                rearABR.Add("F171 N/mm", "B-P1");
+                rearABR.Add("F211 N/mm", "B-P2");
+                rearABR.Add("F253 N/mm", "B-P3");
+                rearABR.Add("F299 N/mm", "B-P4");
+                rearABR.Add("F344 N/mm", "B-P5");
+
+                rearABR.Add("F275 N/mm", "C-P1");
+                rearABR.Add("F306 N/mm", "C-P2");
+                rearABR.Add("F330 N/mm", "C-P3");
+                rearABR.Add("F355 N/mm", "C-P4");
+                rearABR.Add("F368 N/mm", "C-P5");
+
+                rearABR.Add("F317 N/mm", "D-P1");
+                rearABR.Add("F357 N/mm", "D-P2");
+                rearABR.Add("F393 N/mm", "D-P3");
+                rearABR.Add("F428 N/mm", "D-P4");
+                rearABR.Add("F452 N/mm", "D-P5");
+
+                rearABR.Add("F435 N/mm", "E-P1");
+                rearABR.Add("F514 N/mm", "E-P2");
+                rearABR.Add("F590 N/mm", "E-P3");
+                rearABR.Add("F668 N/mm", "E-P4");
+                rearABR.Add("F736 N/mm", "E-P5");
+
+                //pegeout
+                rearABR.Add("PDetached", "Detached");
+                rearABR.Add("P119 N/mm", "P1");
+                rearABR.Add("P144 N/mm", "P2");
+                rearABR.Add("P178 N/mm", "P3");
+                rearABR.Add("P206 N/mm", "P4");
+                rearABR.Add("P250 N/mm", "P5");
+
+                rearABR.Add("P308 N/mm", "P6");
+                rearABR.Add("P393 N/mm", "P7");
+                rearABR.Add("P476 N/mm", "P8");
+                rearABR.Add("P587 N/mm", "P9");
+                rearABR.Add("P732 N/mm", "P10");
+
+                rearABR.Add("P886 N/mm", "P11");
+                rearABR.Add("P1094 N/mm", "P12");
+                rearABR.Add("P1330 N/mm", "P13");
+                rearABR.Add("P1610 N/mm", "P14");
+                rearABR.Add("P1987 N/mm", "P15");
+
+            }
+            catch { }
         }
     }
 
