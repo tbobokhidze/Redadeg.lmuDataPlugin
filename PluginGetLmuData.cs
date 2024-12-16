@@ -217,6 +217,7 @@ namespace Redadeg.lmuDataPlugin
                                 LMURepairAndRefuelData.VM_BRAKE_MIGRATION = VM_BRAKE_MIGRATION["stringValue"].ToString();
                                 LMURepairAndRefuelData.VM_ENGINE_BRAKEMAP = VM_ENGINE_BRAKEMAP["stringValue"].ToString();
                                 LMURepairAndRefuelData.VM_ELECTRIC_MOTOR_MAP = VM_ELECTRIC_MOTOR_MAP["stringValue"].ToString();
+                                LMURepairAndRefuelData.VM_ENGINE_MIXTURE = VM_ENGINE_MIXTURE["stringValue"].ToString();
                                 LMURepairAndRefuelData.VM_REGEN_LEVEL = VM_REGEN_LEVEL["stringValue"].ToString();
                                 LMURepairAndRefuelData.VM_TRACTIONCONTROLMAP = VM_TRACTIONCONTROLMAP["stringValue"].ToString();
                                 LMURepairAndRefuelData.VM_TRACTIONCONTROLPOWERCUTMAP = VM_TRACTIONCONTROLPOWERCUTMAP["stringValue"].ToString();
