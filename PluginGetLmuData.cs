@@ -83,8 +83,10 @@ namespace Redadeg.lmuDataPlugin
         private float[] TyreDiameter = new float[] { 0f, 0f, 0f, 0f };   // in meter - FL,FR,RL,RR
         private float[] LngWheelSlip = new float[] { 0f, 0f, 0f, 0f }; // Longitudinal Wheel Slip values FL,FR,RL,RR
         
-        private List<double> LapTimes = new List<double>();
-        private List<int> EnergyConsuptions = new List<int>();
+        private List<float> LapTimes = new List<float>();
+        private List<float> EnergyConsuptions = new List<float>();
+        private List<float> ClearEnergyConsuptions = new List<float>();
+        private List<float> FuelConsuptions = new List<float>();
 
         //private double energy_AverageConsumptionPer5Lap;
         private int energy_LastLapEnergy = 0;
@@ -98,11 +100,12 @@ namespace Redadeg.lmuDataPlugin
         private TimeSpan InToPitTime = TimeSpan.FromSeconds(0);
         private bool InToPitFlag = false;
         private int pitStopUpdatePause = -1;
-
-
+        private double sesstionTimeStamp = 0; 
+        private double lastLapTime = 0;
         private const  int updateDataDelayTimer = 10;
         private  int updateDataDelayCounter = 0;
-
+        private  int updateConsuptionDelayCounter = 0;
+        private bool updateConsuptionFlag = false;
 
         JObject pitMenuH;
         JObject JSONdata;
@@ -119,53 +122,53 @@ namespace Redadeg.lmuDataPlugin
         bool rf2_score_connected = false;
             
 
-        private void ComputeEnergyData(int CurrentLap, double CurrentLapTime, int pitState ,bool IsLapValid, PluginManager pluginManager)
-        {
-           // pluginManager.SetPropertyValue("georace.lmu.NewLap", this.GetType(), CurrentLap + " - PitState " + pitState);
+//        private void ComputeEnergyData(int CurrentLap, double CurrentLapTime, int pitState ,bool IsLapValid, PluginManager pluginManager)
+//        {
+//           // pluginManager.SetPropertyValue("georace.lmu.NewLap", this.GetType(), CurrentLap + " - PitState " + pitState);
            
 
-            //if (pitState > 0)
-            //{
-            //    energy_LastLapEnergy = currentVirtualEnergy;
-            // pluginManager.SetPropertyValue("georace.lmu.CurrentLapTimeDifOldNew", this.GetType(), energy_LastLapEnergy + " - 112" + LMURepairAndRefuelData.currentVirtualEnergy);
-            //}
+//            //if (pitState > 0)
+//            //{
+//            //    energy_LastLapEnergy = currentVirtualEnergy;
+//            // pluginManager.SetPropertyValue("georace.lmu.CurrentLapTimeDifOldNew", this.GetType(), energy_LastLapEnergy + " - 112" + LMURepairAndRefuelData.currentVirtualEnergy);
+//            //}
              
-            if (energy_LastLapEnergy > LMURepairAndRefuelData.currentVirtualEnergy)
-            {
-                int energyPerLastLapRaw = energy_LastLapEnergy - LMURepairAndRefuelData.currentVirtualEnergy;
+//            if (energy_LastLapEnergy > LMURepairAndRefuelData.currentVirtualEnergy)
+//            {
+//                int energyPerLastLapRaw = energy_LastLapEnergy - LMURepairAndRefuelData.currentVirtualEnergy;
                
-                if (OutFromPitFlag) energyPerLastLapRaw = energyPerLastLapRealTime;
-;
+//                if (OutFromPitFlag) energyPerLastLapRaw = energyPerLastLapRealTime;
+//;
 
-                //pluginManager.SetPropertyValue("georace.lmu.CurrentLapTimeDifOldNew", this.GetType(),  energyPerLastLapRaw);
+//                //pluginManager.SetPropertyValue("georace.lmu.CurrentLapTimeDifOldNew", this.GetType(),  energyPerLastLapRaw);
 
-                if ((pitState != CurrentLap && IsLapValid) || OutFromPitFlag || InToPitFlag)
-                {
-                    IsInPit = -1;
-                    if (LapTimes.Count < 5)
-                    {
-                        energy_CurrentIndex++;
-                        LapTimes.Add(CurrentLapTime);
-                        EnergyConsuptions.Add(energyPerLastLapRaw);
+//                if ((pitState != CurrentLap && IsLapValid) || OutFromPitFlag || InToPitFlag)
+//                {
+//                    IsInPit = -1;
+//                    if (LapTimes.Count < 5)
+//                    {
+//                        energy_CurrentIndex++;
+//                        LapTimes.Add(CurrentLapTime);
+//                        EnergyConsuptions.Add(energyPerLastLapRaw);
     
-                    }
-                    else if (LapTimes.Count == 5)
-                    {
-                        energy_CurrentIndex++;
-                        if (energy_CurrentIndex > 4) energy_CurrentIndex = 0;
-                        LapTimes[energy_CurrentIndex] = CurrentLapTime;
-                        EnergyConsuptions[energy_CurrentIndex] = energyPerLastLapRaw;
-                    }
-                }
-                LMURepairAndRefuelData.energyPerLastLap = (double)(energyPerLastLapRaw);
-                LMURepairAndRefuelData.energyPerLast5Lap = EnergyConsuptions.Average() / LMURepairAndRefuelData.maxVirtualEnergy;
+//                    }
+//                    else if (LapTimes.Count == 5)
+//                    {
+//                        energy_CurrentIndex++;
+//                        if (energy_CurrentIndex > 4) energy_CurrentIndex = 0;
+//                        LapTimes[energy_CurrentIndex] = CurrentLapTime;
+//                        EnergyConsuptions[energy_CurrentIndex] = energyPerLastLapRaw;
+//                    }
+//                }
+//                LMURepairAndRefuelData.energyPerLastLap = (double)(energyPerLastLapRaw);
+//                LMURepairAndRefuelData.energyPerLast5Lap = EnergyConsuptions.Average() / LMURepairAndRefuelData.maxVirtualEnergy;
                     
-                    //pluginManager.SetPropertyValue("georace.lmu.CurrentLapTimeDifOldNew", this.GetType(), LapTimes.Average() + " - " + EnergyConsuptions.Average() / LMURepairAndRefuelData.maxVirtualEnergy);
-                }
+//                    //pluginManager.SetPropertyValue("georace.lmu.CurrentLapTimeDifOldNew", this.GetType(), LapTimes.Average() + " - " + EnergyConsuptions.Average() / LMURepairAndRefuelData.maxVirtualEnergy);
+//                }
          
 
-            energy_LastLapEnergy = LMURepairAndRefuelData.currentVirtualEnergy;
-        }
+//            energy_LastLapEnergy = LMURepairAndRefuelData.currentVirtualEnergy;
+//        }
 
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
@@ -183,19 +186,20 @@ namespace Redadeg.lmuDataPlugin
 
 
 
-                    try
-                    {
+                  
                         if (updateDataDelayCounter < 0)
                         {
-                            JSONdata = JObject.Parse(wc.DownloadString("http://localhost:6397/rest/garage/UIScreen/RepairAndRefuel"));
-                            JObject TireMagagementJSONdata = JObject.Parse(wc.DownloadString("http://localhost:6397/rest/garage/UIScreen/TireManagement"));
-                            JObject GameStateJSONdata = JObject.Parse(wc.DownloadString("http://localhost:6397/rest/sessions/GetGameState"));
+                        wc = new WebClient();
+
+
+                        try
+                            {
                             JObject SetupJSONdata = JObject.Parse(wc.DownloadString("http://localhost:6397/rest/garage/UIScreen/CarSetupOverview"));
                             JObject carSetup = JObject.Parse(SetupJSONdata["carSetup"].ToString());
                             JObject garageValues = JObject.Parse(carSetup["garageValues"].ToString());
+                          //  JObject pitRecommendations = JObject.Parse(JSONdata["pitRecommendations"].ToString());
 
-                            try
-                            {
+                      
                                 JObject VM_ANTILOCKBRAKESYSTEMMAP = JObject.Parse(garageValues["VM_ANTILOCKBRAKESYSTEMMAP"].ToString());
                                 JObject VM_BRAKE_BALANCE = JObject.Parse(garageValues["VM_BRAKE_BALANCE"].ToString());
 
@@ -267,27 +271,7 @@ namespace Redadeg.lmuDataPlugin
                                                 else
                                                 { LMURepairAndRefuelData.VM_FRONT_ANTISWAY = frontABR[LMURepairAndRefuelData.mChangedParamValue]; }
 
-                                                //switch (front_abr)
-                                                //{
-                                                //    case "866":
-                                                //        LMURepairAndRefuelData.VM_FRONT_ANTISWAY = "P1";
-                                                //        break;
-                                                //    case "1069":
-                                                //        LMURepairAndRefuelData.VM_FRONT_ANTISWAY = "P2";
-                                                //        break;
-                                                //    case "1271":
-                                                //        LMURepairAndRefuelData.VM_FRONT_ANTISWAY = "P3";
-                                                //        break;
-                                                //    case "1473":
-                                                //        LMURepairAndRefuelData.VM_FRONT_ANTISWAY = "P4";
-                                                //        break;
-                                                //    case "1676":
-                                                //        LMURepairAndRefuelData.VM_FRONT_ANTISWAY = "P5";
-                                                //        break;
-                                                //    default:
-                                                //        LMURepairAndRefuelData.VM_FRONT_ANTISWAY = front_abr;
-                                                //        break;
-                                                //}
+                                           
 
                                             }
                                             break;
@@ -320,13 +304,16 @@ namespace Redadeg.lmuDataPlugin
                                     }
                                 }
                             }
-                            catch
+                            catch (Exception ex)
                             {
-
+                                
                             }
 
-
-
+                        try
+                        {
+                            JSONdata = JObject.Parse(wc.DownloadString("http://localhost:6397/rest/garage/UIScreen/RepairAndRefuel"));
+                            JObject TireMagagementJSONdata = JObject.Parse(wc.DownloadString("http://localhost:6397/rest/garage/UIScreen/TireManagement"));
+                            JObject GameStateJSONdata = JObject.Parse(wc.DownloadString("http://localhost:6397/rest/sessions/GetGameState"));
                             JObject fuelInfo = JObject.Parse(JSONdata["fuelInfo"].ToString());
                             JObject pitStopLength = JObject.Parse(JSONdata["pitStopLength"].ToString());
 
@@ -355,8 +342,7 @@ namespace Redadeg.lmuDataPlugin
                             LMURepairAndRefuelData.currentBattery = fuelInfo["currentBattery"] != null ? (int)fuelInfo["currentBattery"] : 0;
                             LMURepairAndRefuelData.currentFuel = fuelInfo["currentFuel"] != null ? (int)fuelInfo["currentFuel"] : 0;
                             LMURepairAndRefuelData.timeOfDay = GameStateJSONdata["timeOfDay"] != null ? (double)GameStateJSONdata["timeOfDay"] : 0;
-                            try
-                            {
+                    
                                 JObject InfoForEventJSONdata = JObject.Parse(wc.DownloadString("http://localhost:6397/rest/sessions/GetSessionsInfoForEvent"));
                                 JObject scheduledSessions = JObject.Parse(InfoForEventJSONdata.ToString());
 
@@ -365,463 +351,199 @@ namespace Redadeg.lmuDataPlugin
                                     if (Sesstions["name"].ToString().ToUpper().Equals(data.NewData.SessionTypeName.ToUpper())) LMURepairAndRefuelData.rainChance = Sesstions["rainChance"] != null ? (int)Sesstions["rainChance"] : 0;
 
                                 }
-                            }
-                            catch
-                            {
-                            }
+         
+                            LMURepairAndRefuelData.maxVirtualEnergy = fuelInfo["maxVirtualEnergy"] != null ? (int)fuelInfo["maxVirtualEnergy"] : 0;
+                            LMURepairAndRefuelData.currentVirtualEnergy = fuelInfo["currentVirtualEnergy"] != null ? (int)fuelInfo["currentVirtualEnergy"] : 0;
 
+                      
+         
 
-                            try
-                            {
-                                LMURepairAndRefuelData.currentVirtualEnergy = (int)fuelInfo["currentVirtualEnergy"];
-                                LMURepairAndRefuelData.maxVirtualEnergy = (int)fuelInfo["maxVirtualEnergy"];
-                            }
-                            catch
-                            {
-                                LMURepairAndRefuelData.currentVirtualEnergy = 0;
-                                LMURepairAndRefuelData.maxVirtualEnergy = 0;
-                            }
+                            LMURepairAndRefuelData.maxBattery = fuelInfo["maxBattery"] != null ? (int)fuelInfo["maxBattery"] : 0; 
+                            LMURepairAndRefuelData.maxFuel = fuelInfo["maxFuel"] != null ? (int)fuelInfo["maxFuel"] : 0;
 
-                            LMURepairAndRefuelData.maxBattery = (int)fuelInfo["maxBattery"];
-                            LMURepairAndRefuelData.maxFuel = (int)fuelInfo["maxFuel"];
-
-                            LMURepairAndRefuelData.pitStopLength = (int)pitStopLength["timeInSeconds"];
+                            LMURepairAndRefuelData.pitStopLength = pitStopLength["timeInSeconds"] != null ? (int)pitStopLength["timeInSeconds"]:0;
                             haveDriverMenu = false;
                             isStopAndGo = false;
                             isDamaged = false;
-
-                            //pitStopUpdatePause area
-                            int idx = 0;
-                            foreach (JObject PMCs in pitMenuH["pitMenu"])
-                            {
-
-
-
-                                if ((int)PMCs["PMC Value"] == 0)
-                                {
-                                    LMURepairAndRefuelData.passStopAndGo = PMCs["settings"][(int)PMCs["currentSetting"]]["text"].ToString();
-                                    isStopAndGo = true;
-                                }
-
-                                if ((int)PMCs["PMC Value"] == 1)
-                                {
-                                    if (idx == 0)
-                                    {
-                                        isStopAndGo = false;
-                                        LMURepairAndRefuelData.passStopAndGo = "";
-                                    }
-                                    LMURepairAndRefuelData.RepairDamage = PMCs["settings"][(int)PMCs["currentSetting"]]["text"].ToString();
-                                    if (LMURepairAndRefuelData.RepairDamage.Equals("N/A"))
-                                    { isDamaged = false; }
-                                    else
-                                    {
-                                        isDamaged = true;
-                                    }
-
-                                }
-                                if ((int)PMCs["PMC Value"] == 4)
-                                {
-                                    LMURepairAndRefuelData.Driver = PMCs["settings"][(int)PMCs["currentSetting"]]["text"].ToString();
-                                    haveDriverMenu = true;
-                                }
-                                int Virtual_Energy = 0;
-                                try
-
-                                {
-
-
-                                    if ((int)PMCs["PMC Value"] == 5)
-                                    {
-                                        LMURepairAndRefuelData.addVirtualEnergy = PMCs["settings"][(int)PMCs["currentSetting"]]["text"].ToString();
-                                        Virtual_Energy = (int)PMCs["currentSetting"];
-                                        pluginManager.SetPropertyValue("georace.lmu.Virtual_Energy", this.GetType(), Virtual_Energy);
-                                    }
-                                    if ((int)PMCs["PMC Value"] == 6)
-                                    {
-                                        if (PMCs["name"].ToString().Equals("FUEL:"))
-                                        {
-                                            LMURepairAndRefuelData.addFuel = PMCs["settings"][(int)PMCs["currentSetting"]]["text"].ToString();
-                                            isHybrid = false;
-                                        }
-                                        else
-                                        {
-                                            LMURepairAndRefuelData.FuelRatio = (double)PMCs["settings"][(int)PMCs["currentSetting"]]["text"];
-                                            LMURepairAndRefuelData.addFuel = string.Format("{0:f1}", LMURepairAndRefuelData.FuelRatio * Virtual_Energy) + "L" + LMURepairAndRefuelData.addVirtualEnergy.Split('%')[1];
-                                            isHybrid = true;
-                                        }
-                                    }
-                                }
-                                catch
-                                {
-                                    LMURepairAndRefuelData.FuelRatio = 0;
-                                }
-
-
-                                try
-                                {
-                                    if ((int)PMCs["PMC Value"] == 32)
-                                    {
-                                        LMURepairAndRefuelData.Grille = PMCs["settings"][(int)PMCs["currentSetting"]]["text"].ToString();
-                                    }
-                                    if ((int)PMCs["PMC Value"] == 30)
-                                    {
-                                        LMURepairAndRefuelData.Wing = PMCs["settings"][(int)PMCs["currentSetting"]]["text"].ToString();
-
-                                    }
-                                }
-                                catch
-                                {
-                                }
-
-                                if ((int)PMCs["PMC Value"] == 12)
-                                {
-                                    LMURepairAndRefuelData.fl_TyreChange = PMCs["settings"][(int)PMCs["currentSetting"]]["text"].ToString();
-
-                                }
-                                if ((int)PMCs["PMC Value"] == 13)
-                                {
-                                    LMURepairAndRefuelData.fr_TyreChange = PMCs["settings"][(int)PMCs["currentSetting"]]["text"].ToString();
-
-                                }
-                                if ((int)PMCs["PMC Value"] == 14)
-                                {
-                                    LMURepairAndRefuelData.rl_TyreChange = PMCs["settings"][(int)PMCs["currentSetting"]]["text"].ToString();
-
-                                }
-                                if ((int)PMCs["PMC Value"] == 15)
-                                {
-                                    LMURepairAndRefuelData.rr_TyreChange = PMCs["settings"][(int)PMCs["currentSetting"]]["text"].ToString();
-
-                                }
-
-                                if ((int)PMCs["PMC Value"] == 35)
-                                {
-                                    LMURepairAndRefuelData.fl_TyrePressure = PMCs["settings"][(int)PMCs["currentSetting"]]["text"].ToString();
-
-                                }
-                                if ((int)PMCs["PMC Value"] == 36)
-                                {
-                                    LMURepairAndRefuelData.fr_TyrePressure = PMCs["settings"][(int)PMCs["currentSetting"]]["text"].ToString();
-
-                                }
-                                if ((int)PMCs["PMC Value"] == 37)
-                                {
-                                    LMURepairAndRefuelData.rl_TyrePressure = PMCs["settings"][(int)PMCs["currentSetting"]]["text"].ToString();
-
-                                }
-                                if ((int)PMCs["PMC Value"] == 38)
-                                {
-                                    LMURepairAndRefuelData.rr_TyrePressure = PMCs["settings"][(int)PMCs["currentSetting"]]["text"].ToString();
-
-                                }
-
-                                if ((int)PMCs["PMC Value"] == 43)
-                                {
-                                    LMURepairAndRefuelData.replaceBrakes = PMCs["settings"][(int)PMCs["currentSetting"]]["text"].ToString();
-
-                                }
-                                idx++;
-                            }
-
-
-                            if (isStopAndGo)
-                            {
-                                pluginManager.AddProperty("Redadeg.lmu.isStopAndGo", this.GetType(), 1);
-                            }
-                            else
-                            {
-                                pluginManager.AddProperty("Redadeg.lmu.isStopAndGo", this.GetType(), 0);
-                            }
-
-                            if (isHybrid)
-                            {
-                                pluginManager.SetPropertyValue("Redadeg.lmu.isHyper", this.GetType(), 1);
-                            }
-                            else
-                            {
-                                pluginManager.SetPropertyValue("Redadeg.lmu.isHyper", this.GetType(), 0);
-                            }
-
-                            if (isDamaged)
-                            {
-                                pluginManager.SetPropertyValue("Redadeg.lmu.isDamage", this.GetType(), 1);
-                            }
-                            else
-                            {
-                                pluginManager.SetPropertyValue("Redadeg.lmu.isDamage", this.GetType(), 0);
-                            }
-                            if (haveDriverMenu)
-                            {
-                                pluginManager.SetPropertyValue("Redadeg.lmu.haveDriverMenu", this.GetType(), 1);
-                            }
-                            else
-                            {
-                                pluginManager.SetPropertyValue("Redadeg.lmu.haveDriverMenu", this.GetType(), 0);
-                            }
                         }
-
-                        //Clear data if sesstion restart
-                        if (data.OldData.SessionTypeName != data.NewData.SessionTypeName || data.OldData.IsSessionRestart != data.NewData.IsSessionRestart || !data.SessionId.Equals(SessionId))
+                        catch (Exception ex2)
                         {
-                            SessionId = data.SessionId;
-                            Logging.Current.Info("SectorChange: " + data.OldData.IsSessionRestart.ToString() + " - " + data.NewData.IsSessionRestart.ToString());
-                            LapTimes.Clear();
-                            EnergyConsuptions.Clear();
-                            energy_LastLapEnergy = 0;
-                            energy_CurrentIndex = 0;
-                            LMURepairAndRefuelData.energyPerLast5Lap = 0;
-                            LMURepairAndRefuelData.energyPerLastLap = 0;
-                            LMURepairAndRefuelData.energyTimeElapsed = 0;
-
-
-                            LMURepairAndRefuelData.mPlayerBestSector1 = 0;
-                            LMURepairAndRefuelData.mPlayerBestSector2 = 0;
-                            LMURepairAndRefuelData.mPlayerBestSector3 = 0;
-
-                            LMURepairAndRefuelData.mPlayerCurSector1 = 0;
-                            LMURepairAndRefuelData.mPlayerCurSector2 = 0;
-                            LMURepairAndRefuelData.mPlayerCurSector3 = 0;
-
-                            LMURepairAndRefuelData.mSessionBestSector1 = 0;
-                            LMURepairAndRefuelData.mSessionBestSector2 = 0;
-                            LMURepairAndRefuelData.mSessionBestSector3 = 0;
-
-                            LMURepairAndRefuelData.mPlayerBestLapTime = 0;
-                            LMURepairAndRefuelData.mPlayerBestLapSector1 = 0;
-                            LMURepairAndRefuelData.mPlayerBestLapSector2 = 0;
-                            LMURepairAndRefuelData.mPlayerBestLapSector3 = 0;
-
-                            scoringBuffer.ClearStats();
+                            Logging.Current.Info("currentVirtualEnergy: " + ex2.ToString());
+                            LMURepairAndRefuelData.currentVirtualEnergy = 0;
+                            LMURepairAndRefuelData.maxVirtualEnergy = 0;
                         }
+        
+                    }
 
-                        //End of Clear data if sesstion restart
 
-                        //Energy calculation start
-                        if (isHybrid)
-                        {
 
-                            if (energy_LastLapEnergy == 0)
+                    if (data.OldData.IsInPit > data.NewData.IsInPit)
+                    {
+                        OutFromPitFlag = true;
+                        outFromPitTime = data.NewData.CurrentLapTime;
+                        //   pluginManager.SetPropertyValue("Redadeg.lmu.CurrentLapTimeDifOldNew", this.GetType(), outFromPitTime.ToString() + " SetPit Out " + data.NewData.IsInPit.ToString());
+                    }
+
+
+                    if (data.OldData.IsInPit < data.NewData.IsInPit)
+                    {
+                        InToPitFlag = true;
+                        InToPitTime = data.NewData.CurrentLapTime;
+                        //  pluginManager.SetPropertyValue("Redadeg.lmu.CurrentLapTimeDifOldNew", this.GetType(), InToPitTime + " SetPit Int " + data.NewData.IsInPit.ToString());
+                    }
+
+
+                    //Clear data if sesstion restart
+                    if (data.OldData.SessionTypeName != data.NewData.SessionTypeName || data.OldData.IsSessionRestart != data.NewData.IsSessionRestart || !data.SessionId.Equals(SessionId))
+                    {
+                        SessionId = data.SessionId;
+                        lastLapTime = 0;
+                        sesstionTimeStamp = data.OldData.SessionTimeLeft.TotalSeconds;
+                        LMURepairAndRefuelData.energyPerLastLap = 0;
+                        LMURepairAndRefuelData.energyPerLast5Lap = 0;
+                        LMURepairAndRefuelData.energyPerLast5ClearLap = 0;
+                        EnergyConsuptions.Clear() ;
+                        ClearEnergyConsuptions.Clear();
+                        FuelConsuptions.Clear();
+                        LapTimes.Clear();
+                    }
+                   
+                    if (data.OldData.CurrentLap < data.NewData.CurrentLap || (LMURepairAndRefuelData.energyPerLastLap == 0 && !updateConsuptionFlag))
+                    {
+                        Logging.Current.Info("Last Lap: " + LMURepairAndRefuelData.energyPerLastLap.ToString());
+                        lastLapTime = sesstionTimeStamp - data.OldData.SessionTimeLeft.TotalSeconds;
+                        sesstionTimeStamp = data.OldData.SessionTimeLeft.TotalSeconds;
+                        updateConsuptionFlag = true;
+                        updateConsuptionDelayCounter = 10;
+                    }
+
+                    if (updateConsuptionFlag)
+                    {
+                        if (updateConsuptionDelayCounter < 0)
                             {
-                                energy_LastLapEnergy = LMURepairAndRefuelData.currentVirtualEnergy;
-                            }
-                            string mPitStatus = "0";
+                      
+                            updateConsuptionFlag = false;
                             try
                             {
-                                mPitStatus = pluginManager.GetPropertyValue("DataCorePlugin.GameRawData.CurrentPlayer.mPitState").ToString();
-                            }
-                            catch { }
+ 
+                                //JObject SetupJSONdata = JObject.Parse(wc.DownloadString("http://localhost:6397/rest/garage/UIScreen/RaceHistory"));
+                                JObject TireManagementJSONdata = JObject.Parse(wc.DownloadString("http://localhost:6397/rest/garage/UIScreen/TireManagement"));
+                                JObject expectedUsage = JObject.Parse(TireManagementJSONdata["expectedUsage"].ToString());
 
-                            pluginManager.SetPropertyValue("Redadeg.lmu.CurrentLapTimeDifOldNew", this.GetType(), mPitStatus + " SetPit Int " + data.NewData.IsInPitSince);
+                                float fuelConsumption = expectedUsage["expectedUsage"] != null ? (float)expectedUsage["expectedUsage"] : 0;
+                                double fuelFractionPerLap = expectedUsage["fuelFractionPerLap"] != null ? (double)expectedUsage["fuelFractionPerLap"] : 0;
+                                float virtualEnergyConsumption = expectedUsage["virtualEnergyConsumption"] != null ? (float)((double)expectedUsage["virtualEnergyConsumption"] / (double)LMURepairAndRefuelData.maxVirtualEnergy * 100) : (float)0.0;
+                                double virtualEnergyFractionPerLap = expectedUsage["virtualEnergyFractionPerLap"] != null ? (double)expectedUsage["virtualEnergyFractionPerLap"] : 0;
+                                //JObject raceHistory = JObject.Parse(SetupJSONdata["raceHistory"].ToString());
+                                //double LastLapConsumption = 0;
+                                //int lapsCompletedCount = 0;
 
-                            if (!mPitStatus.Contains("4") && !mPitStatus.Contains("5")) energyPerLastLapRealTime = energy_LastLapEnergy - LMURepairAndRefuelData.currentVirtualEnergy;
-                            pluginManager.SetPropertyValue("Redadeg.lmu.energyPerLastLapRealTime", this.GetType(), energyPerLastLapRealTime);
+                                //EnergyConsuptions.Clear();
+                                //FuelConsuptions.Clear();
+                                //LapTimes.Clear();
+                                LMURepairAndRefuelData.energyPerLastLap = virtualEnergyConsumption;
 
-
-                            if (mPitStatus.Contains("4") || mPitStatus.Contains("5"))
-                            {
-                                pluginManager.SetPropertyValue("Redadeg.lmu.CurrentLapTimeDifOldNew", this.GetType(), mPitStatus + " In Pit Lane Remot " + data.NewData.IsInPitSince);
-                                energy_LastLapEnergy = LMURepairAndRefuelData.currentVirtualEnergy;
-                            }
-
-                            if (data.OldData.IsInPit > 0) IsInPit = data.OldData.CurrentLap;
-
-
-
-
-                            if (data.OldData.IsInPit > data.NewData.IsInPit)
-                            {
-                                OutFromPitFlag = true;
-                                outFromPitTime = data.NewData.CurrentLapTime;
-                                //   pluginManager.SetPropertyValue("Redadeg.lmu.CurrentLapTimeDifOldNew", this.GetType(), outFromPitTime.ToString() + " SetPit Out " + data.NewData.IsInPit.ToString());
-                            }
-
-
-                            if (data.OldData.IsInPit < data.NewData.IsInPit)
-                            {
-                                InToPitFlag = true;
-                                InToPitTime = data.NewData.CurrentLapTime;
-                                //  pluginManager.SetPropertyValue("Redadeg.lmu.CurrentLapTimeDifOldNew", this.GetType(), InToPitTime + " SetPit Int " + data.NewData.IsInPit.ToString());
-                            }
-                            if (data.OldData.CurrentLap < data.NewData.CurrentLap)
-                            {
-                                if (OutFromPitFlag && InToPitFlag)
+                                if (EnergyConsuptions.Count < 5)
                                 {
-                                    ComputeEnergyData(data.OldData.CurrentLap, InToPitTime.TotalSeconds - outFromPitTime.TotalSeconds, IsInPit, data.OldData.IsLapValid, pluginManager);
-                                    // pluginManager.SetPropertyValue("Redadeg.lmu.CurrentLapTimeDifOldNew", this.GetType(), data.OldData.IsInPit.ToString() + " OutFromPitFlag_1 " + data.NewData.IsInPit.ToString());
-                                    OutFromPitFlag = false;
-                                    InToPitFlag = false;
+                                    energy_CurrentIndex++;
+                                    EnergyConsuptions.Add(virtualEnergyConsumption);
                                 }
-                                else if (OutFromPitFlag)
+                                else if (EnergyConsuptions.Count == 5)
                                 {
-                                    ComputeEnergyData(data.OldData.CurrentLap, data.OldData.CurrentLapTime.TotalSeconds - outFromPitTime.TotalSeconds, IsInPit, data.OldData.IsLapValid, pluginManager);
-                                    //pluginManager.SetPropertyValue("Redadeg.lmu.CurrentLapTimeDifOldNew", this.GetType(), data.OldData.IsInPit.ToString() + " OutFromPitFlag_2 " + data.NewData.IsInPit.ToString());
+                                    energy_CurrentIndex++;
+                                    if (energy_CurrentIndex > 4) energy_CurrentIndex = 0;
+                                    EnergyConsuptions[energy_CurrentIndex] = virtualEnergyConsumption;
+                                }
 
+                                if (data.OldData.IsLapValid && !data.OldData.LapInvalidated && !OutFromPitFlag && !InToPitFlag && data.OldData.IsInPit == 0)
+                                {
+
+
+                                    if (LapTimes.Count < 5)
+                                    {
+                                        energy_CurrentIndex++;
+                                        ClearEnergyConsuptions.Add(virtualEnergyConsumption);
+                                        FuelConsuptions.Add(fuelConsumption);
+                                        LapTimes.Add((float)lastLapTime);
+
+                                    }
+                                    else if (LapTimes.Count == 5)
+                                    {
+                                        energy_CurrentIndex++;
+                                        if (energy_CurrentIndex > 4) energy_CurrentIndex = 0;
+                                        LapTimes[energy_CurrentIndex] = (float)lastLapTime;
+                                        ClearEnergyConsuptions[energy_CurrentIndex] = virtualEnergyConsumption;
+                                        FuelConsuptions[energy_CurrentIndex] = fuelConsumption;
+                                    }
+                                }
+                                Logging.Current.Info("Last Lap: " + lastLapTime.ToString() + " virtualEnergyConsumption: " + virtualEnergyConsumption.ToString() + " Raw: " + (expectedUsage["virtualEnergyConsumption"] != null ? (float)(double)expectedUsage["virtualEnergyConsumption"] : 0).ToString());
+                                if (EnergyConsuptions.Count() > 0)
+                                {
+                                    LMURepairAndRefuelData.energyPerLast5Lap = (float)EnergyConsuptions.Average();
                                 }
                                 else
-                                {
-                                    ComputeEnergyData(data.OldData.CurrentLap, InToPitFlag ? InToPitTime.TotalSeconds : data.OldData.CurrentLapTime.TotalSeconds, IsInPit, data.OldData.IsLapValid, pluginManager);
-                                    // pluginManager.SetPropertyValue("Redadeg.lmu.CurrentLapTimeDifOldNew", this.GetType(), data.OldData.IsInPit.ToString() + " cLEARlAP " + data.NewData.IsInPit.ToString());
+                                { 
+                                    LMURepairAndRefuelData.energyPerLast5Lap = 0; 
                                 }
-                                OutFromPitFlag = false;
-                                InToPitFlag = false;
-                                outFromPitTime = TimeSpan.FromSeconds(0);
-                                InToPitTime = TimeSpan.FromSeconds(0);
-                                if (mPitStatus.Contains("4") || mPitStatus.Contains("5")) energy_LastLapEnergy = LMURepairAndRefuelData.currentVirtualEnergy;
+                                   
                             }
-                            else if (LastLapId != data.LapId)
+                            catch (Exception ex)
                             {
-                                if (OutFromPitFlag && InToPitFlag)
-                                {
-                                    ComputeEnergyData(data.OldData.CurrentLap, InToPitTime.TotalSeconds - outFromPitTime.TotalSeconds, IsInPit, data.OldData.IsLapValid, pluginManager);
-                                    // pluginManager.SetPropertyValue("Redadeg.lmu.CurrentLapTimeDifOldNew", this.GetType(), data.OldData.IsInPit.ToString() + " OutFromPitFlag_1 " + data.NewData.IsInPit.ToString());
-                                    OutFromPitFlag = false;
-                                    InToPitFlag = false;
-                                    outFromPitTime = TimeSpan.FromSeconds(0);
-                                    InToPitTime = TimeSpan.FromSeconds(0);
-                                }
-                                else if (OutFromPitFlag)
-                                {
-                                    ComputeEnergyData(data.OldData.CurrentLap, data.OldData.CurrentLapTime.TotalSeconds - outFromPitTime.TotalSeconds, IsInPit, data.OldData.IsLapValid, pluginManager);
-                                    // pluginManager.SetPropertyValue("Redadeg.lmu.CurrentLapTimeDifOldNew", this.GetType(), data.OldData.IsInPit.ToString() + " OutFromPitFlag_1 " + data.NewData.IsInPit.ToString());
-                                    OutFromPitFlag = false;
-                                    InToPitFlag = false;
-                                    outFromPitTime = TimeSpan.FromSeconds(0);
-                                    InToPitTime = TimeSpan.FromSeconds(0);
-                                }
+                                Logging.Current.Info("Energy calculate: " + ex.ToString());
+                            }
+                            OutFromPitFlag = false;
+                            InToPitFlag = false;
+                        }
+                        updateConsuptionDelayCounter--;
+                 }
 
-                                energy_LastLapEnergy = LMURepairAndRefuelData.currentVirtualEnergy;
-                                //ComputeEnergyData(data.OldData.CurrentLap, data.OldData.CurrentLapTime.TotalSeconds, IsInPit, LapOldNew, data.OldData.IsLapValid, pluginManager);
 
+
+
+                    if (updateDataDelayCounter < 0)
+                        {
+                            try
+                        {
+
+
+                            if (ClearEnergyConsuptions.Count() > 0 && LapTimes.Count() > 0 && LMURepairAndRefuelData.maxVirtualEnergy > 0)
+                            {
+                                float virtualErg = (float)LMURepairAndRefuelData.currentVirtualEnergy / (float)LMURepairAndRefuelData.maxVirtualEnergy * 100;
+                                LMURepairAndRefuelData.energyTimeElapsed = (LapTimes.Average() * virtualErg / ClearEnergyConsuptions.Average()) / 60;
+                                LMURepairAndRefuelData.VirtualEnergy = virtualErg;
+                                //LTime ConsumAvg
+                                //      Energy    
                             }
 
-
-                            LastLapId = data.LapId;
-                            //end of energy calculation
-
-
-
-
-
-                            if (EnergyConsuptions.Count() > 0 && LapTimes.Count() > 0)
+                            if (EnergyConsuptions.Count() > 0)
                             {
-                                LMURepairAndRefuelData.energyTimeElapsed = LapTimes.Average() * LMURepairAndRefuelData.currentVirtualEnergy / EnergyConsuptions.Average();
+                                LMURepairAndRefuelData.energyPerLast5Lap = (float)EnergyConsuptions.Average();
                             }
                             else
                             {
-                                //real time calculation
-                                double energyLapsRealTimeElapsed = data.OldData.TrackPositionPercent * (double)LMURepairAndRefuelData.currentVirtualEnergy / (double)energyPerLastLapRealTime;
-                                LMURepairAndRefuelData.energyTimeElapsed = (double)LMURepairAndRefuelData.currentVirtualEnergy * (double)(data.OldData.CurrentLapTime.TotalSeconds - outFromPitTime.TotalSeconds) / (double)energyPerLastLapRealTime;
-                                pluginManager.SetPropertyValue("Redadeg.lmu.energyLapsRealTimeElapsed", this.GetType(), energyLapsRealTimeElapsed);
+                                LMURepairAndRefuelData.energyPerLast5Lap = 0;
                             }
 
+                            if (ClearEnergyConsuptions.Count() > 0)
+                            {
+                                LMURepairAndRefuelData.energyPerLast5ClearLap = (float)ClearEnergyConsuptions.Average();
+                            }
+                            else
+                            {
+                                LMURepairAndRefuelData.energyPerLast5ClearLap = 0;
+                            }
                         }
-                        //Energy calculation end
+                        catch (Exception ex)
+                        {
+                            Logging.Current.Info("SectorChange: " + ex.ToString());
+
+                        }
+                 
 
 
-                        ////Calc current times
-                        //if (data.OldData.CurrentSectorIndex != data.NewData.CurrentSectorIndex)
-                        //{
-                        //    if (!this.rf2_score_connected)
-                        //    {
-                        //        try
-                        //        {
-                        //            // Extended buffer is the last one constructed, so it is an indicator RF2SM is ready.
-                        //            this.scoringBuffer.Connect();
-                        //            this.rf2_score_connected = true;
-                        //        }
-                        //        catch (Exception)
-                        //        {
-
-                        //            this.rf2_score_connected = false;
-                        //            LMURepairAndRefuelData.mPlayerBestSector1 = 0;
-                        //            LMURepairAndRefuelData.mPlayerBestSector2 = 0;
-                        //            LMURepairAndRefuelData.mPlayerBestSector3 = 0;
-
-                        //            LMURepairAndRefuelData.mPlayerCurSector1 = 0;
-                        //            LMURepairAndRefuelData.mPlayerCurSector2 = 0;
-                        //            LMURepairAndRefuelData.mPlayerCurSector3 = 0;
-
-                        //            LMURepairAndRefuelData.mSessionBestSector1 = 0;
-                        //            LMURepairAndRefuelData.mSessionBestSector2 = 0;
-                        //            LMURepairAndRefuelData.mSessionBestSector3 = 0;
-
-                        //            LMURepairAndRefuelData.mPlayerBestLapTime = 0;
-                        //            LMURepairAndRefuelData.mPlayerBestLapSector1 = 0;
-                        //            LMURepairAndRefuelData.mPlayerBestLapSector2 = 0;
-                        //            LMURepairAndRefuelData.mPlayerBestLapSector3 = 0;
-                        //            //Logging.Current.Info("Extended data update service not connectded.");
-                        //        }
-                        //    }
-
-                        //    if (this.rf2_score_connected)
-                        //    {
-                        //        scoringBuffer.GetMappedData(ref scoring);
-                        //        rF2VehicleScoring playerScoring = GetPlayerScoring(ref this.scoring);
-
-                        //        //double mPlayerLastSector1 = 0.0;
-                        //        //double mPlayerLastSector2 = 0.0;
-                        //        //double mPlayerLastSector3 = 0.0;
-
-                        //        double mSessionBestSector1 = 0.0;
-                        //        double mSessionBestSector2 = 0.0;
-                        //        double mSessionBestSector3 = 0.0;
-
-                        //        List<rF2VehicleScoring> OpenentsScoring = GetOpenentsScoring(ref this.scoring);
-                        //        foreach (rF2VehicleScoring OpenentScore in OpenentsScoring)
-                        //        {
-                        //            if (GetStringFromBytes(playerScoring.mVehicleClass).Equals(GetStringFromBytes(OpenentScore.mVehicleClass)))
-                        //            {
-
-                        //                if (OpenentScore.mCurSector1 > 0) mSessionBestSector1 = OpenentScore.mCurSector1;
-
-                        //                if (LMURepairAndRefuelData.mSessionBestSector1 == 0 && OpenentScore.mBestLapSector1 > 0)
-                        //                {
-                        //                    LMURepairAndRefuelData.mSessionBestSector1 = OpenentScore.mBestLapSector1;
-                        //                }
-
-                        //                if (OpenentScore.mCurSector1 > 0 && OpenentScore.mCurSector2 > 0) mSessionBestSector2 = OpenentScore.mCurSector2 - OpenentScore.mCurSector1;
-
-                        //                if (LMURepairAndRefuelData.mSessionBestSector2 == 0 && OpenentScore.mBestLapSector2 > 0 && OpenentScore.mBestLapSector1 > 0)
-                        //                {
-                        //                    LMURepairAndRefuelData.mSessionBestSector2 = OpenentScore.mBestLapSector2 - OpenentScore.mBestLapSector1;
-                        //                }
-
-                        //                if (OpenentScore.mCurSector2 > 0 && OpenentScore.mLastLapTime > 0) mSessionBestSector3 = OpenentScore.mLastLapTime - OpenentScore.mCurSector2;
-
-                        //                if (LMURepairAndRefuelData.mSessionBestSector3 == 0 && OpenentScore.mBestLapTime > 0 && OpenentScore.mBestLapSector2 > 0)
-                        //                {
-                        //                    LMURepairAndRefuelData.mSessionBestSector3 = OpenentScore.mBestLapTime - OpenentScore.mBestLapSector2;
-                        //                }
-
-
-                        //                if (LMURepairAndRefuelData.mSessionBestSector1 > mSessionBestSector1 && mSessionBestSector1 > 0) LMURepairAndRefuelData.mSessionBestSector1 = mSessionBestSector1;
-                        //                if (LMURepairAndRefuelData.mSessionBestSector2 > mSessionBestSector2 && mSessionBestSector2 > 0) LMURepairAndRefuelData.mSessionBestSector2 = mSessionBestSector2;
-                        //                if (LMURepairAndRefuelData.mSessionBestSector3 > mSessionBestSector3 && mSessionBestSector3 > 0) LMURepairAndRefuelData.mSessionBestSector3 = mSessionBestSector3;
-
-                        //            }
-                        //        }
-                        //    }
-                        //    //Logging.Current.Info("SectorChange: " + data.OldData.CurrentSectorIndex.ToString() + " - " + data.NewData.CurrentSectorIndex.ToString());
-
-                        //    if (data.NewData.Sector1Time.HasValue) LMURepairAndRefuelData.mPlayerCurSector1 = data.NewData.Sector1Time.Value.TotalSeconds;
-                        //    //Logging.Current.Info("Print sector 1: " + data.OldData.Sector1Time.Value.TotalSeconds.ToString() + " - " + data.NewData.Sector1Time.Value.TotalSeconds.ToString());
-
-                        //    if (data.NewData.Sector2Time.HasValue) LMURepairAndRefuelData.mPlayerCurSector2 = data.NewData.Sector2Time.Value.TotalSeconds;
-                        //    if (data.NewData.Sector3LastLapTime.HasValue) LMURepairAndRefuelData.mPlayerCurSector3 = data.NewData.Sector3LastLapTime.Value.TotalSeconds;
-
-                        //    if ((LMURepairAndRefuelData.mPlayerBestSector1 > LMURepairAndRefuelData.mPlayerCurSector1 || LMURepairAndRefuelData.mPlayerBestSector1 == 0) && LMURepairAndRefuelData.mPlayerCurSector1 > 0.0) LMURepairAndRefuelData.mPlayerBestSector1 = LMURepairAndRefuelData.mPlayerCurSector1;
-                        //    if ((LMURepairAndRefuelData.mPlayerBestSector2 > LMURepairAndRefuelData.mPlayerCurSector2 || LMURepairAndRefuelData.mPlayerBestSector2 == 0) && LMURepairAndRefuelData.mPlayerCurSector2 > 0.0) LMURepairAndRefuelData.mPlayerBestSector2 = LMURepairAndRefuelData.mPlayerCurSector2;
-                        //    if ((LMURepairAndRefuelData.mPlayerBestSector3 > LMURepairAndRefuelData.mPlayerCurSector3 || LMURepairAndRefuelData.mPlayerBestSector3 == 0) && LMURepairAndRefuelData.mPlayerCurSector3 > 0.0) LMURepairAndRefuelData.mPlayerBestSector3 = LMURepairAndRefuelData.mPlayerCurSector3;
-
-                        //    LMURepairAndRefuelData.mPlayerBestLapTime = data.NewData.BestLapTime.TotalSeconds > 0 ? data.NewData.BestLapTime.TotalSeconds : 0;
-                        //    LMURepairAndRefuelData.mPlayerBestLapSector1 = data.NewData.Sector1BestLapTime.Value.TotalSeconds > 0 ? data.NewData.Sector1BestLapTime.Value.TotalSeconds : 0;
-                        //    LMURepairAndRefuelData.mPlayerBestLapSector2 = data.NewData.Sector2BestLapTime.Value.TotalSeconds > 0 ? data.NewData.Sector2BestLapTime.Value.TotalSeconds : 0;
-                        //    LMURepairAndRefuelData.mPlayerBestLapSector3 = data.NewData.Sector3BestLapTime.Value.TotalSeconds > 0 ? data.NewData.Sector3BestLapTime.Value.TotalSeconds : 0;
-                        //}
-                        ////Calc current times end
-                        if (updateDataDelayCounter < 0)
-                        { 
+                            try { 
                         pluginManager.SetPropertyValue("Redadeg.lmu.energyPerLast5Lap", this.GetType(), LMURepairAndRefuelData.energyPerLast5Lap);
+                        pluginManager.SetPropertyValue("Redadeg.lmu.energyPerLast5ClearLap", this.GetType(), LMURepairAndRefuelData.energyPerLast5ClearLap);
                         pluginManager.SetPropertyValue("Redadeg.lmu.energyPerLastLap", this.GetType(), LMURepairAndRefuelData.energyPerLastLap);
                         pluginManager.SetPropertyValue("Redadeg.lmu.energyTimeElapsed", this.GetType(), LMURepairAndRefuelData.energyTimeElapsed);
 
@@ -858,7 +580,7 @@ namespace Redadeg.lmuDataPlugin
                         pluginManager.SetPropertyValue("Redadeg.lmu.maxBattery", this.GetType(), LMURepairAndRefuelData.maxBattery);
                         pluginManager.SetPropertyValue("Redadeg.lmu.maxFuel", this.GetType(), LMURepairAndRefuelData.maxFuel);
                         pluginManager.SetPropertyValue("Redadeg.lmu.maxVirtualEnergy", this.GetType(), LMURepairAndRefuelData.maxVirtualEnergy);
-
+                        pluginManager.AddProperty("Redadeg.lmu.Virtual_Energy", this.GetType(), LMURepairAndRefuelData.VirtualEnergy);
 
                         pluginManager.SetPropertyValue("Redadeg.lmu.Extended.Cuts", this.GetType(), LMURepairAndRefuelData.Cuts);
                         pluginManager.SetPropertyValue("Redadeg.lmu.Extended.CutsMax", this.GetType(), LMURepairAndRefuelData.CutsMax);
@@ -911,28 +633,33 @@ namespace Redadeg.lmuDataPlugin
                         pluginManager.SetPropertyValue("Redadeg.lmu.Extended.VM_FRONT_ANTISWAY", this.GetType(), LMURepairAndRefuelData.VM_FRONT_ANTISWAY);
                         pluginManager.SetPropertyValue("Redadeg.lmu.Extended.VM_REAR_ANTISWAY", this.GetType(), LMURepairAndRefuelData.VM_REAR_ANTISWAY);
 
-                        //if (lmu_extended_connected)
-                        //{
-                        //    pluginManager.SetPropertyValue("Redadeg.lmu.mMessage", this.GetType(), GetStringFromBytes( rules.mTrackRules.mMessage));
 
-                        //}
+                                //pluginManager.SetPropertyValue("Redadeg.lmu.pitRecommendations.PIT_RECOM_FL_TIRE", this.GetType(), LMURepairAndRefuelData.PIT_RECOM_FL_TIRE);
+                                //pluginManager.SetPropertyValue("Redadeg.lmu.pitRecommendations.PIT_RECOM_FR_TIRE", this.GetType(), LMURepairAndRefuelData.PIT_RECOM_FR_TIRE);
+                                //pluginManager.SetPropertyValue("Redadeg.lmu.pitRecommendations.PIT_RECOM_RL_TIRE", this.GetType(), LMURepairAndRefuelData.PIT_RECOM_RL_TIRE);
+                                //pluginManager.SetPropertyValue("Redadeg.lmu.pitRecommendations.PIT_RECOM_RR_TIRE", this.GetType(), LMURepairAndRefuelData.PIT_RECOM_RR_TIRE);
+                                //pluginManager.SetPropertyValue("Redadeg.lmu.pitRecommendations.PIT_RECOM_TIRES", this.GetType(), LMURepairAndRefuelData.PIT_RECOM_TIRES);
+                                //pluginManager.SetPropertyValue("Redadeg.lmu.pitRecommendations.PIT_RECOM_fuel", this.GetType(), LMURepairAndRefuelData.PIT_RECOM_fuel);
+                                //pluginManager.SetPropertyValue("Redadeg.lmu.pitRecommendations.PIT_RECOM_virtualEnergy", this.GetType(), LMURepairAndRefuelData.PIT_RECOM_virtualEnergy);
+
+
+
+                                //if (lmu_extended_connected)
+                                //{
+                                //    pluginManager.SetPropertyValue("Redadeg.lmu.mMessage", this.GetType(), GetStringFromBytes( rules.mTrackRules.mMessage));
+
+                                //}
+                            }
+                            // if there is no settings file, use the following defaults
+                            catch (Exception ex)
+                            {
+                                Logging.Current.Info("Plugin Redadeg.lmuDataPlugin Update parameters: " + ex.ToString());
+                            }
+                        }
                     }
                         isStopAndGo = false;
                         LMURepairAndRefuelData.passStopAndGo = "";
-                    }
-                    // if there is no settings file, use the following defaults
-                    catch (Exception ex)
-                    {
-                        LMURepairAndRefuelData.currentBattery = 50;
-                        LMURepairAndRefuelData.currentFuel = 0;
-                        LMURepairAndRefuelData.currentVirtualEnergy = 5;
-                        LMURepairAndRefuelData.maxBattery = 486000000;
-                        LMURepairAndRefuelData.maxVirtualEnergy = 920000000;
-                        LMURepairAndRefuelData.pitStopLength = 0;
-                        Logging.Current.Info("Plugin Redadeg.lmuDataPlugin: " + ex.ToString());
-
-                    }
-                }
+                  
                 StopUpdate = false;
                 if (updateDataDelayCounter < 0) updateDataDelayCounter = updateDataDelayTimer;
             }
@@ -1234,6 +961,7 @@ namespace Redadeg.lmuDataPlugin
           
             
             pluginManager.AddProperty("Redadeg.lmu.energyPerLast5Lap", this.GetType(), LMURepairAndRefuelData.energyPerLast5Lap);
+            pluginManager.AddProperty("Redadeg.lmu.energyPerLast5ClearLap", this.GetType(), LMURepairAndRefuelData.energyPerLast5ClearLap);
             pluginManager.AddProperty("Redadeg.lmu.energyPerLastLap", this.GetType(), LMURepairAndRefuelData.energyPerLastLap);
             pluginManager.AddProperty("Redadeg.lmu.energyPerLastLapRealTime", this.GetType(), 0);
             pluginManager.AddProperty("Redadeg.lmu.energyLapsRealTimeElapsed", this.GetType(), 0);
@@ -1256,6 +984,7 @@ namespace Redadeg.lmuDataPlugin
             pluginManager.AddProperty("Redadeg.lmu.Virtual_Energy", this.GetType(), 0);
             pluginManager.AddProperty("Redadeg.lmu.currentBattery", this.GetType(), LMURepairAndRefuelData.currentBattery);
             pluginManager.AddProperty("Redadeg.lmu.currentVirtualEnergy", this.GetType(), LMURepairAndRefuelData.currentVirtualEnergy);
+            pluginManager.AddProperty("Redadeg.lmu.Virtual_Energy", this.GetType(), LMURepairAndRefuelData.VirtualEnergy);
             pluginManager.AddProperty("Redadeg.lmu.pitStopLength", this.GetType(), LMURepairAndRefuelData.pitStopLength);
 
             pluginManager.AddProperty("Redadeg.lmu.maxAvailableTires", this.GetType(), LMURepairAndRefuelData.maxAvailableTires);
@@ -1277,10 +1006,10 @@ namespace Redadeg.lmuDataPlugin
             pluginManager.AddProperty("Redadeg.lmu.maxFuel", this.GetType(), LMURepairAndRefuelData.maxFuel);
             pluginManager.AddProperty("Redadeg.lmu.maxVirtualEnergy", this.GetType(), LMURepairAndRefuelData.maxVirtualEnergy);
 
-            pluginManager.AddProperty("Redadeg.lmu.isStopAndGo", this.GetType(), 0);
-            pluginManager.AddProperty("Redadeg.lmu.isDamage", this.GetType(), 0);
-            pluginManager.AddProperty("Redadeg.lmu.haveDriverMenu", this.GetType(), 0);
-            pluginManager.AddProperty("Redadeg.lmu.isHyper", this.GetType(), 0);
+            //pluginManager.AddProperty("Redadeg.lmu.isStopAndGo", this.GetType(), 0);
+            //pluginManager.AddProperty("Redadeg.lmu.isDamage", this.GetType(), 0);
+            //pluginManager.AddProperty("Redadeg.lmu.haveDriverMenu", this.GetType(), 0);
+            //pluginManager.AddProperty("Redadeg.lmu.isHyper", this.GetType(), 0);
 
             pluginManager.AddProperty("Redadeg.lmu.Extended.Cuts", this.GetType(), 0);
             pluginManager.AddProperty("Redadeg.lmu.Extended.CutsMax", this.GetType(), 0);
@@ -1331,6 +1060,13 @@ namespace Redadeg.lmuDataPlugin
             pluginManager.AddProperty("Redadeg.lmu.Extended.VM_FRONT_ANTISWAY", this.GetType(), "");
             pluginManager.AddProperty("Redadeg.lmu.Extended.VM_REAR_ANTISWAY", this.GetType(), "");
 
+            //pluginManager.AddProperty("Redadeg.lmu.pitRecommendations.PIT_RECOM_FL_TIRE", this.GetType(),0);
+            //pluginManager.AddProperty("Redadeg.lmu.pitRecommendations.PIT_RECOM_FR_TIRE", this.GetType(), 0);
+            //pluginManager.AddProperty("Redadeg.lmu.pitRecommendations.PIT_RECOM_RL_TIRE", this.GetType(), 0);
+            //pluginManager.AddProperty("Redadeg.lmu.pitRecommendations.PIT_RECOM_RR_TIRE", this.GetType(), 0);
+            //pluginManager.AddProperty("Redadeg.lmu.pitRecommendations.PIT_RECOM_TIRES", this.GetType(),0);
+            //pluginManager.AddProperty("Redadeg.lmu.pitRecommendations.PIT_RECOM_fuel", this.GetType(), 0);
+            //pluginManager.AddProperty("Redadeg.lmu.pitRecommendations.PIT_RECOM_virtualEnergy", this.GetType(), 0);
 
 
             frontABR = new Dictionary<string, string>();

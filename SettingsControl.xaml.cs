@@ -230,6 +230,15 @@ namespace Redadeg.lmuDataPlugin
         public static double mSessionBestSector3 { get; set; }
 
 
+        //public static string PIT_RECOM_FL_TIRE { get; set; }
+        //public static string PIT_RECOM_FR_TIRE { get; set; }
+        //public static string PIT_RECOM_RL_TIRE { get; set; }
+        //public static string PIT_RECOM_RR_TIRE { get; set; }
+
+        //public static string PIT_RECOM_TIRES { get; set; }
+        //public static string PIT_RECOM_fuel { get; set; }
+        //public static string PIT_RECOM_virtualEnergy { get; set; }
+
         public static int mpBrakeMigration { get; set; }
         public static int mpBrakeMigrationMax { get; set; }
         public static int mpTractionControl { get; set; }
@@ -245,9 +254,10 @@ namespace Redadeg.lmuDataPlugin
         public static int mPendingPenaltyType1 { get; set; }
         public static int mPendingPenaltyType2 { get; set; }
         public static int mPendingPenaltyType3 { get; set; }
-        public static double energyTimeElapsed { get; set; }
-        public static double energyPerLastLap { get; set; }
-        public static double energyPerLast5Lap { get; set; }
+        public static float energyTimeElapsed { get; set; }
+        public static float energyPerLastLap { get; set; }
+        public static float energyPerLast5Lap { get; set; }
+        public static float energyPerLast5ClearLap { get; set; }
         public static double currentFuel { get; set; }
         public static int currentVirtualEnergy { get; set; }
         public static int currentBattery { get; set; }
@@ -257,7 +267,7 @@ namespace Redadeg.lmuDataPlugin
         public static string RepairDamage { get; set; }
         public static string passStopAndGo { get; set; }
         public static string Driver { get; set; }
-        public static int VirtualEnergy { get; set; }
+        public static float VirtualEnergy { get; set; }
 
         public static string addVirtualEnergy { get; set; }
         public static string addFuel { get; set; }
