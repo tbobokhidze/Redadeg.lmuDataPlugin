@@ -73,11 +73,11 @@ namespace Redadeg.lmuDataPlugin
         //private float[] TyreRPS = new float[] { 0f, 0f, 0f, 0f };
         int[] lapsForCalculate = new int[] { };
         //private JObject JSONdata_diameters;
-        private bool isHybrid = false;
-      //  private bool isHaveVirtualEnergy = false;
-        private bool isDamaged = false;
-        private bool isStopAndGo = false;
-        private bool haveDriverMenu = false;
+        //private bool isHybrid = false;
+        //private bool isHaveVirtualEnergy = false;
+        //private bool isDamaged = false;
+        //private bool isStopAndGo = false;
+        //private bool haveDriverMenu = false;
         private Guid SessionId;
         //output variables
         private float[] TyreDiameter = new float[] { 0f, 0f, 0f, 0f };   // in meter - FL,FR,RL,RR
@@ -89,12 +89,12 @@ namespace Redadeg.lmuDataPlugin
         private List<float> FuelConsuptions = new List<float>();
 
         //private double energy_AverageConsumptionPer5Lap;
-        private int energy_LastLapEnergy = 0;
+        //private int energy_LastLapEnergy = 0;
         private int energy_CurrentIndex = 0;
-        private int IsInPit = -1;
-        private Guid LastLapId = new Guid();
+        //private int IsInPit = -1;
+        //private Guid LastLapId = new Guid();
         
-        private int energyPerLastLapRealTime = 0;
+        //private int energyPerLastLapRealTime = 0;
         private TimeSpan outFromPitTime = TimeSpan.FromSeconds(0);
         private bool OutFromPitFlag = false;
         private TimeSpan InToPitTime = TimeSpan.FromSeconds(0);
@@ -289,7 +289,7 @@ namespace Redadeg.lmuDataPlugin
                                     }
                             }
                         }
-                        catch (Exception ex)
+                        catch 
                         {
                                 
                         }
@@ -342,9 +342,9 @@ namespace Redadeg.lmuDataPlugin
                             LMURepairAndRefuelData.maxFuel = fuelInfo["maxFuel"] != null ? (int)fuelInfo["maxFuel"] : 0;
 
                             LMURepairAndRefuelData.pitStopLength = pitStopLength["timeInSeconds"] != null ? (int)pitStopLength["timeInSeconds"]:0;
-                            haveDriverMenu = false;
-                            isStopAndGo = false;
-                            isDamaged = false;
+                            //haveDriverMenu = false;
+                            //isStopAndGo = false;
+                            //isDamaged = false;
                         }
                         catch (Exception ex2)
                         {
@@ -629,7 +629,7 @@ namespace Redadeg.lmuDataPlugin
                         }
                     }
                 }
-                isStopAndGo = false;
+                //isStopAndGo = false;
                 LMURepairAndRefuelData.passStopAndGo = "";
                 StopUpdate = false;
                 if (updateDataDelayCounter < 0) updateDataDelayCounter = updateDataDelayTimer;
