@@ -99,6 +99,8 @@ namespace Redadeg.lmuDataPlugin
         private bool OutFromPitFlag = false;
         private TimeSpan InToPitTime = TimeSpan.FromSeconds(0);
         private bool InToPitFlag = false;
+        private bool IsLapValid = true;
+        private bool LapInvalidated = false;
         private int pitStopUpdatePause = -1;
         private double sesstionTimeStamp = 0; 
         private double lastLapTime = 0;
@@ -408,15 +410,20 @@ namespace Redadeg.lmuDataPlugin
                         LapTimes.Clear();
                     }
                    
+                    //
                     if (data.OldData.CurrentLap < data.NewData.CurrentLap || (LMURepairAndRefuelData.energyPerLastLap == 0 && !updateConsuptionFlag))
                     {
-                        Logging.Current.Info("Last Lap: " + LMURepairAndRefuelData.energyPerLastLap.ToString());
+                       // Logging.Current.Info("Last Lap: " + LMURepairAndRefuelData.energyPerLastLap.ToString());
                         lastLapTime = sesstionTimeStamp - data.OldData.SessionTimeLeft.TotalSeconds;
                         sesstionTimeStamp = data.OldData.SessionTimeLeft.TotalSeconds;
                         updateConsuptionFlag = true;
                         updateConsuptionDelayCounter = 10;
+
+                        IsLapValid = data.OldData.IsLapValid;
+                        LapInvalidated = data.OldData.LapInvalidated;
                     }
 
+                    //Calculate Energy consumption if EnergyCalculate Delay counter elabsed "updateConsuptionDelayCounter"
                     if (updateConsuptionFlag)
                     {
                         if (updateConsuptionDelayCounter < 0)
@@ -455,7 +462,7 @@ namespace Redadeg.lmuDataPlugin
                                     EnergyConsuptions[energy_CurrentIndex] = virtualEnergyConsumption;
                                 }
 
-                                if (data.OldData.IsLapValid && !data.OldData.LapInvalidated && !OutFromPitFlag && !InToPitFlag && data.OldData.IsInPit == 0)
+                                if (IsLapValid && !LapInvalidated && !OutFromPitFlag && !InToPitFlag && data.OldData.IsInPit == 0)
                                 {
 
 
@@ -476,7 +483,7 @@ namespace Redadeg.lmuDataPlugin
                                         FuelConsuptions[energy_CurrentIndex] = fuelConsumption;
                                     }
                                 }
-                                Logging.Current.Info("Last Lap: " + lastLapTime.ToString() + " virtualEnergyConsumption: " + virtualEnergyConsumption.ToString() + " Raw: " + (expectedUsage["virtualEnergyConsumption"] != null ? (float)(double)expectedUsage["virtualEnergyConsumption"] : 0).ToString());
+                               // Logging.Current.Info("Last Lap: " + lastLapTime.ToString() + " virtualEnergyConsumption: " + virtualEnergyConsumption.ToString() + " Raw: " + (expectedUsage["virtualEnergyConsumption"] != null ? (float)(double)expectedUsage["virtualEnergyConsumption"] : 0).ToString());
                                 if (EnergyConsuptions.Count() > 0)
                                 {
                                     LMURepairAndRefuelData.energyPerLast5Lap = (float)EnergyConsuptions.Average();
@@ -499,7 +506,7 @@ namespace Redadeg.lmuDataPlugin
 
 
 
-
+                    //Update Energy consumption da if EnergyCalculate Delay counter elabsed "updateDataDelayCounter"
                     if (updateDataDelayCounter < 0)
                         {
                             try
